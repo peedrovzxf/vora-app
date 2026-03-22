@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -23,7 +24,8 @@ fun SongsTab(
     songs: List<Song>,
     playerController: PlayerController,
     playlists: List<Playlist>,
-    onAddToPlaylist: (playlistId: Long, songId: Long) -> Unit
+    onAddToPlaylist: (playlistId: Long, songId: Long) -> Unit,
+    onEditSong: (songId: Long) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -35,44 +37,68 @@ fun SongsTab(
                 playerController = playerController,
                 songs = songs,
                 playlists = playlists,
-                onAddToPlaylist = onAddToPlaylist
+                onAddToPlaylist = onAddToPlaylist,
+                onEditSong = onEditSong
             )
         }
     }
 }
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SongItem(song: Song, playerController: PlayerController, songs: List<Song>, playlists: List<Playlist>, onAddToPlaylist: (playlistId: Long, songId: Long) -> Unit) {
+fun SongItem(
+    song: Song,
+    playerController: PlayerController,
+    songs: List<Song>,
+    playlists: List<Playlist>,
+    onAddToPlaylist: (playlistId: Long, songId: Long) -> Unit,
+    onEditSong: (songId: Long) -> Unit
+) {
     var showMenu by remember { mutableStateOf(false) }
 
     Box {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .combinedClickable(
                     onClick = { playerController.play(song, songs) },
                     onLongClick = { showMenu = true }
                 )
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = song.title,
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = song.artist,
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = song.title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = song.artist,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
 
         DropdownMenu(
             expanded = showMenu,
             onDismissRequest = { showMenu = false }
         ) {
+            Text(
+                text = "Options",
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+            DropdownMenuItem(
+                text = { Text("Edit info") },
+                onClick = {
+                    onEditSong(song.id)
+                    showMenu = false
+                }
+            )
+            HorizontalDivider()
             Text(
                 text = "Add to playlist",
                 style = MaterialTheme.typography.labelSmall,

@@ -6,11 +6,12 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [PlaylistEntity::class, PlaylistSongEntity::class],
-    version = 1
+    entities = [PlaylistEntity::class, PlaylistSongEntity::class, SongMetadataEntity::class],
+    version = 2
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun playlistDao(): PlaylistDao
+    abstract fun songMetadataDao(): SongMetadataDao
 
     companion object {
         @Volatile
@@ -22,7 +23,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "vora_db"
-                ).build().also { INSTANCE = it }
+                )
+                    .fallbackToDestructiveMigration(true)
+                    .build().also { INSTANCE = it }
             }
         }
     }

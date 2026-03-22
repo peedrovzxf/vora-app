@@ -17,10 +17,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
+import com.peedrovzxf.vora.data.local.AppDatabase
 import com.peedrovzxf.vora.data.local.MediaStoreSource
 import com.peedrovzxf.vora.data.model.Album
 import com.peedrovzxf.vora.data.model.Artist
 import com.peedrovzxf.vora.data.model.Song
+import com.peedrovzxf.vora.data.repository.SongMetadataRepository
 import com.peedrovzxf.vora.player.PlayerController
 import com.peedrovzxf.vora.ui.navigation.NavGraph
 import com.peedrovzxf.vora.ui.player.NowPlayingBar
@@ -51,7 +53,7 @@ class MainActivity : ComponentActivity() {
 fun VoraApp(playerController: PlayerController) {
     val context = LocalContext.current
     val navController = rememberNavController()
-    var songs by remember { mutableStateOf<List<Song>>(emptyList()) }
+    var mergedSongs by remember { mutableStateOf<List<Song>>(emptyList()) }
     var albums by remember { mutableStateOf<List<Album>>(emptyList()) }
     var artists by remember { mutableStateOf<List<Artist>>(emptyList()) }
 
@@ -76,9 +78,16 @@ fun VoraApp(playerController: PlayerController) {
     LaunchedEffect(hasPermission) {
         if (hasPermission) {
             val source = MediaStoreSource(context)
-            songs = source.getSongs()
+            val rawSongs = source.getSongs()
             albums = source.getAlbums()
             artists = source.getArtists()
+
+            val metadataRepository = SongMetadataRepository(
+                AppDatabase.getInstance(context).songMetadataDao()
+            )
+            metadataRepository.getAllSongsWithMetadata(rawSongs).collect { updated ->
+                mergedSongs = updated
+            }
         } else {
             launcher.launch(permission)
         }
@@ -98,7 +107,7 @@ fun VoraApp(playerController: PlayerController) {
             NavGraph(
                 navController = navController,
                 playerController = playerController,
-                songs = songs,
+                songs = mergedSongs,
                 albums = albums,
                 artists = artists
             )

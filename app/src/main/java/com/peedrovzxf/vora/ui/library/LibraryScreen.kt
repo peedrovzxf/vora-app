@@ -47,6 +47,9 @@ fun LibraryScreen(
                 playlists = playlists,
                 onAddToPlaylist = { playlistId, songId ->
                     playlistViewModel.addSongToPlaylist(playlistId, songId)
+                },
+                onEditSong = { songId ->
+                    navController.navigate(Screen.EditSong.createRoute(songId))
                 }
             )
             1 -> AlbumsTab(albums = albums, playerController = playerController)
