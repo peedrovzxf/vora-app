@@ -14,23 +14,30 @@ import com.peedrovzxf.vora.data.model.Artist
 import com.peedrovzxf.vora.player.PlayerController
 
 @Composable
-fun ArtistsTab(artists: List<Artist>, playerController: PlayerController) {
+fun ArtistsTab(
+    artists: List<Artist>,
+    playerController: PlayerController,
+    onOpenArtist: (artistName: String) -> Unit
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
         items(artists) { artist ->
-            ArtistItem(artist = artist, playerController = playerController)
+            ArtistItem(
+                artist = artist,
+                onClick = { onOpenArtist(artist.name) }
+            )
         }
     }
 }
 
 @Composable
-fun ArtistItem(artist: Artist, playerController: PlayerController) {
+fun ArtistItem(artist: Artist, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { playerController.play(artist.songs.first(), artist.songs) }
+            .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
