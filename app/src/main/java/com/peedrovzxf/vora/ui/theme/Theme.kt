@@ -1,53 +1,61 @@
 package com.peedrovzxf.vora.ui.theme
 
-import android.app.Activity
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
+// Accent colors
+val AccentDefault = Color(0xFF6650A4)
+val AccentRed = Color(0xFFE53935)
+val AccentBlue = Color(0xFF1E88E5)
+val AccentGreen = Color(0xFF43A047)
+val AccentOrange = Color(0xFFFB8C00)
+val AccentPink = Color(0xFFE91E63)
+val AccentTeal = Color(0xFF00897B)
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
-)
+fun accentFromKey(key: String): Color = when (key) {
+    "red" -> AccentRed
+    "blue" -> AccentBlue
+    "green" -> AccentGreen
+    "orange" -> AccentOrange
+    "pink" -> AccentPink
+    "teal" -> AccentTeal
+    else -> AccentDefault
+}
 
 @Composable
 fun VoraTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = true,
+    accentColor: String = "default",
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
+    val accent = accentFromKey(accentColor)
+    val onAccent = Color.White
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    val colorScheme = if (darkTheme) {
+        darkColorScheme(
+            primary = accent,
+            onPrimary = onAccent,
+            secondary = accent.copy(alpha = 0.7f),
+            background = Color(0xFF0A0A0A),
+            surface = Color(0xFF141414),
+            surfaceVariant = Color(0xFF1E1E1E),
+            onBackground = Color(0xFFF0F0F0),
+            onSurface = Color(0xFFF0F0F0),
+        )
+    } else {
+        lightColorScheme(
+            primary = accent,
+            onPrimary = onAccent,
+            secondary = accent.copy(alpha = 0.7f),
+            background = Color(0xFFFAFAFA),
+            surface = Color(0xFFFFFFFF),
+            surfaceVariant = Color(0xFFF0F0F0),
+            onBackground = Color(0xFF0A0A0A),
+            onSurface = Color(0xFF0A0A0A),
+        )
     }
 
     MaterialTheme(

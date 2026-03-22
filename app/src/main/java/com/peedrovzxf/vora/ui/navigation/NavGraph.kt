@@ -26,6 +26,7 @@ import com.peedrovzxf.vora.ui.playlist.PlaylistDetailScreen
 import com.peedrovzxf.vora.ui.playlist.PlaylistViewModel
 import com.peedrovzxf.vora.ui.search.SearchScreen
 import com.peedrovzxf.vora.ui.settings.SettingsScreen
+import com.peedrovzxf.vora.ui.settings.SettingsViewModel
 
 sealed class Screen(val route: String) {
     object Home : Screen("home")
@@ -107,7 +108,8 @@ fun NavGraph(
         }
 
         composable(Screen.Settings.route) {
-            SettingsScreen()
+            val settingsViewModel: SettingsViewModel = viewModel()
+            SettingsScreen(viewModel = settingsViewModel)
         }
 
         composable(Screen.AlbumDetail.route) { backStackEntry ->

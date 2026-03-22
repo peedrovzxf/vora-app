@@ -49,7 +49,6 @@ fun HomeScreen(
             )
         }
 
-        // Canción del día
         dailySong?.let { song ->
             item {
                 SectionTitle("Song of the day")
@@ -60,7 +59,6 @@ fun HomeScreen(
             }
         }
 
-        // Escuchado recientemente
         if (recentSongs.isNotEmpty()) {
             item {
                 SectionTitle("Recently played")
@@ -78,7 +76,6 @@ fun HomeScreen(
             }
         }
 
-        // Artistas frecuentes
         if (frequentArtists.isNotEmpty()) {
             item {
                 SectionTitle("Your artists")
@@ -96,7 +93,6 @@ fun HomeScreen(
             }
         }
 
-        // Álbumes sugeridos
         if (suggestedAlbums.isNotEmpty()) {
             item {
                 SectionTitle("Suggested albums")

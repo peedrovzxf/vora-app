@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.peedrovzxf.vora.data.local.AppDatabase
@@ -35,6 +36,7 @@ import com.peedrovzxf.vora.player.PlayerController
 import com.peedrovzxf.vora.ui.navigation.NavGraph
 import com.peedrovzxf.vora.ui.navigation.Screen
 import com.peedrovzxf.vora.ui.player.NowPlayingSheet
+import com.peedrovzxf.vora.ui.settings.SettingsViewModel
 import com.peedrovzxf.vora.ui.theme.VoraTheme
 
 class MainActivity : ComponentActivity() {
@@ -49,9 +51,7 @@ class MainActivity : ComponentActivity() {
         playerController = PlayerController(this, historyRepository)
         enableEdgeToEdge()
         setContent {
-            VoraTheme {
-                VoraApp(playerController)
-            }
+            VoraApp(playerController)
         }
     }
 
@@ -64,131 +64,158 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VoraApp(playerController: PlayerController) {
-    val context = LocalContext.current
-    val navController = rememberNavController()
-    var mergedSongs by remember { mutableStateOf<List<Song>>(emptyList()) }
-    var albums by remember { mutableStateOf<List<Album>>(emptyList()) }
-    var artists by remember { mutableStateOf<List<Artist>>(emptyList()) }
+    val settingsViewModel: SettingsViewModel = viewModel()
+    val isDarkMode by settingsViewModel.isDarkMode.collectAsState()
+    val accentColor by settingsViewModel.accentColor.collectAsState()
 
-    val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        Manifest.permission.READ_MEDIA_AUDIO
-    } else {
-        Manifest.permission.READ_EXTERNAL_STORAGE
-    }
+    VoraTheme(darkTheme = isDarkMode, accentColor = accentColor) {
+        val context = LocalContext.current
+        val navController = rememberNavController()
+        var mergedSongs by remember { mutableStateOf<List<Song>>(emptyList()) }
+        var albums by remember { mutableStateOf<List<Album>>(emptyList()) }
+        var artists by remember { mutableStateOf<List<Artist>>(emptyList()) }
 
-    var hasPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
-        )
-    }
-
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted -> hasPermission = granted }
-
-    LaunchedEffect(hasPermission) {
-        if (hasPermission) {
-            val source = MediaStoreSource(context)
-            val rawSongs = source.getSongs()
-            val metadataRepository = SongMetadataRepository(
-                AppDatabase.getInstance(context).songMetadataDao()
-            )
-            metadataRepository.getAllSongsWithMetadata(rawSongs).collect { updated ->
-                mergedSongs = updated
-                albums = buildAlbums(updated)
-                artists = buildArtists(updated)
-            }
+        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_AUDIO
         } else {
-            launcher.launch(permission)
+            Manifest.permission.READ_EXTERNAL_STORAGE
         }
-    }
 
-    if (!hasPermission) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Se necesita permiso para acceder a la música")
-        }
-        return
-    }
-
-    val currentSong by playerController.currentSong.collectAsState()
-    val navBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val sheetPeekHeight = if (currentSong != null) 72.dp + navBarHeight else 0.dp
-
-    val sheetState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberStandardBottomSheetState(
-            initialValue = SheetValue.PartiallyExpanded,
-            skipHiddenState = true
-        )
-    )
-
-    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-
-    BottomSheetScaffold(
-        scaffoldState = sheetState,
-        sheetPeekHeight = sheetPeekHeight,
-        sheetDragHandle = null,
-        sheetContent = {
-            NowPlayingSheet(
-                playerController = playerController,
-                sheetState = sheetState.bottomSheetState
+        var hasPermission by remember {
+            mutableStateOf(
+                ContextCompat.checkSelfPermission(
+                    context,
+                    permission
+                ) == PackageManager.PERMISSION_GRANTED
             )
         }
-    ) { paddingValues ->
-        Scaffold(
-            bottomBar = {
-                val topLevelRoutes = listOf(
-                    Screen.Home.route,
-                    Screen.Search.route,
-                    Screen.Library.route,
-                    Screen.Settings.route
+
+        val launcher = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted -> hasPermission = granted }
+
+        LaunchedEffect(hasPermission) {
+            if (hasPermission) {
+                val source = MediaStoreSource(context)
+                val rawSongs = source.getSongs()
+                val metadataRepository = SongMetadataRepository(
+                    AppDatabase.getInstance(context).songMetadataDao()
                 )
-                if (currentRoute in topLevelRoutes) {
-                    NavigationBar {
-                        NavigationBarItem(
-                            selected = currentRoute == Screen.Home.route,
-                            onClick = { navController.navigate(Screen.Home.route) {
-                                popUpTo(Screen.Home.route) { inclusive = true }
-                            }},
-                            icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
-                            label = { Text("Home") }
-                        )
-                        NavigationBarItem(
-                            selected = currentRoute == Screen.Search.route,
-                            onClick = { navController.navigate(Screen.Search.route) {
-                                popUpTo(Screen.Home.route)
-                            }},
-                            icon = { Icon(Icons.Filled.Search, contentDescription = "Search") },
-                            label = { Text("Search") }
-                        )
-                        NavigationBarItem(
-                            selected = currentRoute == Screen.Library.route,
-                            onClick = { navController.navigate(Screen.Library.route) {
-                                popUpTo(Screen.Home.route)
-                            }},
-                            icon = { Icon(Icons.Filled.LibraryMusic, contentDescription = "Library") },
-                            label = { Text("Library") }
-                        )
-                        NavigationBarItem(
-                            selected = currentRoute == Screen.Settings.route,
-                            onClick = { navController.navigate(Screen.Settings.route) {
-                                popUpTo(Screen.Home.route)
-                            }},
-                            icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings") },
-                            label = { Text("Settings") }
-                        )
-                    }
+                metadataRepository.getAllSongsWithMetadata(rawSongs).collect { updated ->
+                    mergedSongs = updated
+                    albums = buildAlbums(updated)
+                    artists = buildArtists(updated)
                 }
-            },
-            modifier = Modifier.padding(paddingValues)
-        ) { innerPadding ->
-            Box(modifier = Modifier.padding(innerPadding)) {
-                NavGraph(
-                    navController = navController,
+            } else {
+                launcher.launch(permission)
+            }
+        }
+
+        if (!hasPermission) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Se necesita permiso para acceder a la música")
+            }
+            return@VoraTheme
+        }
+
+        val currentSong by playerController.currentSong.collectAsState()
+        val navBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val sheetPeekHeight = if (currentSong != null) 72.dp + navBarHeight else 0.dp
+
+        val sheetState = rememberBottomSheetScaffoldState(
+            bottomSheetState = rememberStandardBottomSheetState(
+                initialValue = SheetValue.PartiallyExpanded,
+                skipHiddenState = true
+            )
+        )
+
+        val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+
+        BottomSheetScaffold(
+            scaffoldState = sheetState,
+            sheetPeekHeight = sheetPeekHeight,
+            sheetDragHandle = null,
+            sheetContent = {
+                NowPlayingSheet(
                     playerController = playerController,
-                    songs = mergedSongs,
-                    albums = albums,
-                    artists = artists
+                    sheetState = sheetState.bottomSheetState
                 )
+            }
+        ) { paddingValues ->
+            Scaffold(
+                bottomBar = {
+                    val topLevelRoutes = listOf(
+                        Screen.Home.route,
+                        Screen.Search.route,
+                        Screen.Library.route,
+                        Screen.Settings.route
+                    )
+                    if (currentRoute in topLevelRoutes) {
+                        NavigationBar {
+                            NavigationBarItem(
+                                selected = currentRoute == Screen.Home.route,
+                                onClick = {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(Screen.Home.route) { inclusive = true }
+                                    }
+                                },
+                                icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
+                                label = { Text("Home") }
+                            )
+                            NavigationBarItem(
+                                selected = currentRoute == Screen.Search.route,
+                                onClick = {
+                                    navController.navigate(Screen.Search.route) {
+                                        popUpTo(Screen.Home.route)
+                                    }
+                                },
+                                icon = { Icon(Icons.Filled.Search, contentDescription = "Search") },
+                                label = { Text("Search") }
+                            )
+                            NavigationBarItem(
+                                selected = currentRoute == Screen.Library.route,
+                                onClick = {
+                                    navController.navigate(Screen.Library.route) {
+                                        popUpTo(Screen.Home.route)
+                                    }
+                                },
+                                icon = {
+                                    Icon(
+                                        Icons.Filled.LibraryMusic,
+                                        contentDescription = "Library"
+                                    )
+                                },
+                                label = { Text("Library") }
+                            )
+                            NavigationBarItem(
+                                selected = currentRoute == Screen.Settings.route,
+                                onClick = {
+                                    navController.navigate(Screen.Settings.route) {
+                                        popUpTo(Screen.Home.route)
+                                    }
+                                },
+                                icon = {
+                                    Icon(
+                                        Icons.Filled.Settings,
+                                        contentDescription = "Settings"
+                                    )
+                                },
+                                label = { Text("Settings") }
+                            )
+                        }
+                    }
+                },
+                modifier = Modifier.padding(paddingValues)
+            ) { innerPadding ->
+                Box(modifier = Modifier.padding(innerPadding)) {
+                    NavGraph(
+                        navController = navController,
+                        playerController = playerController,
+                        songs = mergedSongs,
+                        albums = albums,
+                        artists = artists
+                    )
+                }
             }
         }
     }
