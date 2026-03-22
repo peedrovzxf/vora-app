@@ -4,13 +4,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import com.peedrovzxf.vora.data.model.Album
 import com.peedrovzxf.vora.data.model.Song
 import com.peedrovzxf.vora.player.PlayerController
+import com.peedrovzxf.vora.ui.library.tabs.AlbumsTab
 import com.peedrovzxf.vora.ui.library.tabs.SongsTab
 
 @Composable
 fun LibraryScreen(
     songs: List<Song>,
+    albums: List<Album>,
     playerController: PlayerController
 ) {
     val tabs = listOf("Songs", "Albums", "Artists")
@@ -29,7 +32,7 @@ fun LibraryScreen(
 
         when (selectedTab) {
             0 -> SongsTab(songs = songs, playerController = playerController)
-            1 -> Text("Albums — coming soon")
+            1 -> AlbumsTab(albums = albums, playerController = playerController)
             2 -> Text("Artists — coming soon")
         }
     }

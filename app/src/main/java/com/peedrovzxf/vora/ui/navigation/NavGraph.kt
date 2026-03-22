@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.peedrovzxf.vora.data.model.Album
 import com.peedrovzxf.vora.data.model.Song
 import com.peedrovzxf.vora.player.PlayerController
 import com.peedrovzxf.vora.ui.library.LibraryScreen
@@ -16,12 +17,14 @@ sealed class Screen(val route: String) {
 fun NavGraph(
     navController: NavHostController,
     playerController: PlayerController,
-    songs: List<Song>
+    songs: List<Song>,
+    albums: List<Album>
 ) {
     NavHost(navController = navController, startDestination = Screen.Library.route) {
         composable(Screen.Library.route) {
             LibraryScreen(
                 songs = songs,
+                albums = albums,
                 playerController = playerController
             )
         }

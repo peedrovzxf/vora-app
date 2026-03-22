@@ -2,6 +2,7 @@ package com.peedrovzxf.vora.data.local
 
 import android.content.Context
 import android.provider.MediaStore
+import com.peedrovzxf.vora.data.model.Album
 import com.peedrovzxf.vora.data.model.Song
 
 class MediaStoreSource(private val context: Context) {
@@ -56,5 +57,21 @@ class MediaStoreSource(private val context: Context) {
         }
 
         return songs
+    }
+
+    fun getAlbums(): List<Album> {
+        val songs = getSongs()
+        return songs
+            .groupBy { it.album }
+            .map { (albumName, albumSongs) ->
+                Album(
+                    id = albumSongs.first().id,
+                    name = albumName,
+                    artist = albumSongs.first().artist,
+                    albumArtUri = albumSongs.first().albumArtUri,
+                    songs = albumSongs
+                )
+            }
+            .sortedBy { it.name }
     }
 }
