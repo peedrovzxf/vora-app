@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.peedrovzxf.vora.data.local.MediaStoreSource
 import com.peedrovzxf.vora.data.model.Album
+import com.peedrovzxf.vora.data.model.Artist
 import com.peedrovzxf.vora.data.model.Song
 import com.peedrovzxf.vora.player.PlayerController
 import com.peedrovzxf.vora.ui.navigation.NavGraph
@@ -52,6 +53,7 @@ fun VoraApp(playerController: PlayerController) {
     val navController = rememberNavController()
     var songs by remember { mutableStateOf<List<Song>>(emptyList()) }
     var albums by remember { mutableStateOf<List<Album>>(emptyList()) }
+    var artists by remember { mutableStateOf<List<Artist>>(emptyList()) }
 
     val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         Manifest.permission.READ_MEDIA_AUDIO
@@ -76,6 +78,7 @@ fun VoraApp(playerController: PlayerController) {
             val source = MediaStoreSource(context)
             songs = source.getSongs()
             albums = source.getAlbums()
+            artists = source.getArtists()
         } else {
             launcher.launch(permission)
         }
@@ -96,7 +99,8 @@ fun VoraApp(playerController: PlayerController) {
                 navController = navController,
                 playerController = playerController,
                 songs = songs,
-                albums = albums
+                albums = albums,
+                artists = artists
             )
         }
     }
