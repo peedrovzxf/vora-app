@@ -21,6 +21,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _albums = MutableStateFlow<List<Album>>(emptyList())
     private val _artists = MutableStateFlow<List<Artist>>(emptyList())
 
+    val allSongs: StateFlow<List<Song>> = _songs
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     fun setData(songs: List<Song>, albums: List<Album>, artists: List<Artist>) {
         _songs.value = songs
         _albums.value = albums
