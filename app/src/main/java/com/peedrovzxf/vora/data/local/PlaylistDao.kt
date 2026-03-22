@@ -26,4 +26,7 @@ interface PlaylistDao {
 
     @Query("UPDATE playlist_songs SET position = :position WHERE id = :id")
     suspend fun updateSongPosition(id: Long, position: Int)
+
+    @Query("SELECT COUNT(*) FROM playlist_songs WHERE playlistId = :playlistId AND songId = :songId")
+    suspend fun songExistsInPlaylist(playlistId: Long, songId: Long): Int
 }

@@ -43,7 +43,7 @@ fun LibraryScreen(
                 playerController = playerController,
                 playlists = playlists,
                 onAddToPlaylist = { playlistId, songId ->
-                    playlistViewModel.addSongToPlaylist(playlistId, songId, 0)
+                    playlistViewModel.addSongToPlaylist(playlistId, songId)
                 }
             )
             1 -> AlbumsTab(albums = albums, playerController = playerController)

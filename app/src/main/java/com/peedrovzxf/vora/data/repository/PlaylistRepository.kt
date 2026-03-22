@@ -5,21 +5,31 @@ import com.peedrovzxf.vora.data.local.PlaylistEntity
 import com.peedrovzxf.vora.data.local.PlaylistSongEntity
 import com.peedrovzxf.vora.data.model.Playlist
 import com.peedrovzxf.vora.data.model.Song
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 
 class PlaylistRepository(private val dao: PlaylistDao) {
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun getPlaylists(allSongs: List<Song>): Flow<List<Playlist>> {
-        return dao.getAllPlaylists().combine(
-            kotlinx.coroutines.flow.flowOf(allSongs)
-        ) { entities, songs ->
-            entities.map { entity ->
-                Playlist(
-                    id = entity.id,
-                    name = entity.name,
-                    songs = emptyList()
-                )
+        return dao.getAllPlaylists().flatMapLatest { entities ->
+            if (entities.isEmpty()) {
+                kotlinx.coroutines.flow.flowOf(emptyList())
+            } else {
+                combine(entities.map { entity ->
+                    dao.getSongsForPlaylist(entity.id).map { playlistSongs ->
+                        Playlist(
+                            id = entity.id,
+                            name = entity.name,
+                            songs = playlistSongs.mapNotNull { ps ->
+                                allSongs.find { it.id == ps.songId }
+                            }
+                        )
+                    }
+                }) { it.toList() }
             }
         }
     }
@@ -29,13 +39,15 @@ class PlaylistRepository(private val dao: PlaylistDao) {
     }
 
     suspend fun addSongToPlaylist(playlistId: Long, songId: Long, position: Int) {
-        dao.insertPlaylistSong(
-            PlaylistSongEntity(
-                playlistId = playlistId,
-                songId = songId,
-                position = position
+        if (dao.songExistsInPlaylist(playlistId, songId) == 0) {
+            dao.insertPlaylistSong(
+                PlaylistSongEntity(
+                    playlistId = playlistId,
+                    songId = songId,
+                    position = position
+                )
             )
-        )
+        }
     }
 
     suspend fun removeSongFromPlaylist(playlistId: Long, songId: Long) {

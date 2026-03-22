@@ -7,9 +7,8 @@ import com.peedrovzxf.vora.data.local.AppDatabase
 import com.peedrovzxf.vora.data.model.Playlist
 import com.peedrovzxf.vora.data.model.Song
 import com.peedrovzxf.vora.data.repository.PlaylistRepository
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class PlaylistViewModel(application: Application) : AndroidViewModel(application) {
@@ -18,17 +17,22 @@ class PlaylistViewModel(application: Application) : AndroidViewModel(application
         AppDatabase.getInstance(application).playlistDao()
     )
 
-    private var allSongs: List<Song> = emptyList()
+    private val _allSongs = MutableStateFlow<List<Song>>(emptyList())
 
     fun setSongs(songs: List<Song>) {
-        allSongs = songs
+        _allSongs.value = songs
     }
 
-    val playlists: StateFlow<List<Playlist>> = repository.getPlaylists(allSongs).stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val playlists: StateFlow<List<Playlist>> = _allSongs
+        .flatMapLatest { songs ->
+            repository.getPlaylists(songs)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     fun createPlaylist(name: String) {
         viewModelScope.launch {
@@ -36,9 +40,10 @@ class PlaylistViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun addSongToPlaylist(playlistId: Long, songId: Long, position: Int) {
+    fun addSongToPlaylist(playlistId: Long, songId: Long) {
         viewModelScope.launch {
-            repository.addSongToPlaylist(playlistId, songId, position)
+            val currentSongs = repository.getPlaylistSongs(playlistId, _allSongs.value).first()
+            repository.addSongToPlaylist(playlistId, songId, currentSongs.size)
         }
     }
 
@@ -54,8 +59,11 @@ class PlaylistViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun getPlaylistSongs(playlistId: Long): StateFlow<List<Song>> {
-        return repository.getPlaylistSongs(playlistId, allSongs).stateIn(
+        return _allSongs.flatMapLatest { songs ->
+            repository.getPlaylistSongs(playlistId, songs)
+        }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
