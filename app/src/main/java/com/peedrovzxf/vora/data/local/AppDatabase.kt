@@ -11,14 +11,16 @@ import androidx.room.RoomDatabase
         PlaylistSongEntity::class,
         SongMetadataEntity::class,
         AlbumMetadataEntity::class,
-        AlbumSongOrderEntity::class
+        AlbumSongOrderEntity::class,
+        PlayHistoryEntity::class
     ],
-    version = 3
+    version = 4
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun playlistDao(): PlaylistDao
     abstract fun songMetadataDao(): SongMetadataDao
     abstract fun albumMetadataDao(): AlbumMetadataDao
+    abstract fun playHistoryDao(): PlayHistoryDao
 
     companion object {
         @Volatile

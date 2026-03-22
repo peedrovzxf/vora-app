@@ -10,6 +10,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,15 +22,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.peedrovzxf.vora.data.local.AppDatabase
 import com.peedrovzxf.vora.data.local.MediaStoreSource
 import com.peedrovzxf.vora.data.model.Album
 import com.peedrovzxf.vora.data.model.Artist
 import com.peedrovzxf.vora.data.model.Song
+import com.peedrovzxf.vora.data.repository.PlayHistoryRepository
 import com.peedrovzxf.vora.data.repository.SongMetadataRepository
 import com.peedrovzxf.vora.player.PlayerController
 import com.peedrovzxf.vora.ui.navigation.NavGraph
+import com.peedrovzxf.vora.ui.navigation.Screen
 import com.peedrovzxf.vora.ui.player.NowPlayingSheet
 import com.peedrovzxf.vora.ui.theme.VoraTheme
 
@@ -35,7 +43,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        playerController = PlayerController(this)
+        val historyRepository = PlayHistoryRepository(
+            AppDatabase.getInstance(this).playHistoryDao()
+        )
+        playerController = PlayerController(this, historyRepository)
         enableEdgeToEdge()
         setContent {
             VoraTheme {
@@ -110,6 +121,8 @@ fun VoraApp(playerController: PlayerController) {
         )
     )
 
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+
     BottomSheetScaffold(
         scaffoldState = sheetState,
         sheetPeekHeight = sheetPeekHeight,
@@ -121,18 +134,62 @@ fun VoraApp(playerController: PlayerController) {
             )
         }
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = paddingValues.calculateBottomPadding())
-        ) {
-            NavGraph(
-                navController = navController,
-                playerController = playerController,
-                songs = mergedSongs,
-                albums = albums,
-                artists = artists
-            )
+        Scaffold(
+            bottomBar = {
+                val topLevelRoutes = listOf(
+                    Screen.Home.route,
+                    Screen.Search.route,
+                    Screen.Library.route,
+                    Screen.Settings.route
+                )
+                if (currentRoute in topLevelRoutes) {
+                    NavigationBar {
+                        NavigationBarItem(
+                            selected = currentRoute == Screen.Home.route,
+                            onClick = { navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Home.route) { inclusive = true }
+                            }},
+                            icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
+                            label = { Text("Home") }
+                        )
+                        NavigationBarItem(
+                            selected = currentRoute == Screen.Search.route,
+                            onClick = { navController.navigate(Screen.Search.route) {
+                                popUpTo(Screen.Home.route)
+                            }},
+                            icon = { Icon(Icons.Filled.Search, contentDescription = "Search") },
+                            label = { Text("Search") }
+                        )
+                        NavigationBarItem(
+                            selected = currentRoute == Screen.Library.route,
+                            onClick = { navController.navigate(Screen.Library.route) {
+                                popUpTo(Screen.Home.route)
+                            }},
+                            icon = { Icon(Icons.Filled.LibraryMusic, contentDescription = "Library") },
+                            label = { Text("Library") }
+                        )
+                        NavigationBarItem(
+                            selected = currentRoute == Screen.Settings.route,
+                            onClick = { navController.navigate(Screen.Settings.route) {
+                                popUpTo(Screen.Home.route)
+                            }},
+                            icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings") },
+                            label = { Text("Settings") }
+                        )
+                    }
+                }
+            },
+            modifier = Modifier.padding(paddingValues)
+        ) { innerPadding ->
+            Box(modifier = Modifier.padding(innerPadding)) {
+                NavGraph(
+                    navController = navController,
+                    playerController = playerController,
+                    songs = mergedSongs,
+                    albums = albums,
+                    artists = artists
+                )
+            }
         }
     }
 }

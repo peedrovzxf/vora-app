@@ -9,6 +9,7 @@ import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import com.peedrovzxf.vora.data.model.Song
+import com.peedrovzxf.vora.data.repository.PlayHistoryRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -18,8 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class PlayerController(context: Context) {
-
+class PlayerController(context: Context, private val historyRepository: PlayHistoryRepository) {
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     private val _currentSong = MutableStateFlow<Song?>(null)
@@ -155,6 +155,9 @@ class PlayerController(context: Context) {
         controller?.setMediaItem(mediaItem)
         controller?.prepare()
         controller?.play()
+        scope.launch {
+            historyRepository.recordPlay(song.id)
+        }
     }
 
     fun togglePlayPause() {
