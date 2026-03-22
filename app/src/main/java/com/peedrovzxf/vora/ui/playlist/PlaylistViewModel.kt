@@ -24,13 +24,11 @@ class PlaylistViewModel(application: Application) : AndroidViewModel(application
         allSongs = songs
     }
 
-    fun getPlaylists(): StateFlow<List<Playlist>> {
-        return repository.getPlaylists(allSongs).stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
-    }
+    val playlists: StateFlow<List<Playlist>> = repository.getPlaylists(allSongs).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     fun createPlaylist(name: String) {
         viewModelScope.launch {

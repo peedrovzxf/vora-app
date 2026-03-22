@@ -20,7 +20,7 @@ fun PlaylistScreen(
     viewModel: PlaylistViewModel,
     playerController: PlayerController
 ) {
-    val playlists by viewModel.getPlaylists().collectAsState()
+    val playlists by viewModel.playlists.collectAsState()
     var showCreateDialog by remember { mutableStateOf(false) }
 
     Scaffold(
