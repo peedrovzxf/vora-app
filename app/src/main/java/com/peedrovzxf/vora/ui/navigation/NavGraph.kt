@@ -1,8 +1,10 @@
 package com.peedrovzxf.vora.ui.navigation
 
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -53,8 +55,11 @@ fun NavGraph(
     albums: List<Album>,
     artists: List<Artist>
 ) {
-    NavHost(navController = navController, startDestination = Screen.Library.route) {
-        composable(Screen.Library.route) {
+    NavHost(
+        navController = navController,
+        startDestination = Screen.Library.route,
+        modifier = Modifier.statusBarsPadding()
+    ) {        composable(Screen.Library.route) {
             val playlistViewModel: PlaylistViewModel = viewModel()
             playlistViewModel.setSongs(songs)
             LibraryScreen(

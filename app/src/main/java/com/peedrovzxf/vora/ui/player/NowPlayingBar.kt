@@ -1,5 +1,6 @@
 package com.peedrovzxf.vora.ui.player
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
@@ -15,7 +16,10 @@ import androidx.compose.ui.unit.dp
 import com.peedrovzxf.vora.player.PlayerController
 
 @Composable
-fun NowPlayingBar(playerController: PlayerController) {
+fun NowPlayingBar(
+    playerController: PlayerController,
+    onTap: () -> Unit
+) {
     val currentSong by playerController.currentSong.collectAsState()
     val isPlaying by playerController.isPlaying.collectAsState()
     val progress by playerController.progress.collectAsState()
@@ -23,7 +27,8 @@ fun NowPlayingBar(playerController: PlayerController) {
     currentSong?.let { song ->
         Surface(
             tonalElevation = 8.dp,
-            shadowElevation = 8.dp
+            shadowElevation = 8.dp,
+            modifier = Modifier.clickable { onTap() }
         ) {
             Column(
                 modifier = Modifier
@@ -34,7 +39,6 @@ fun NowPlayingBar(playerController: PlayerController) {
                     progress = { progress },
                     modifier = Modifier.fillMaxWidth()
                 )
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -55,18 +59,15 @@ fun NowPlayingBar(playerController: PlayerController) {
                             overflow = TextOverflow.Ellipsis
                         )
                     }
-
                     IconButton(onClick = { playerController.previous() }) {
                         Icon(Icons.Filled.SkipPrevious, contentDescription = "Previous")
                     }
-
                     IconButton(onClick = { playerController.togglePlayPause() }) {
                         Icon(
                             if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                             contentDescription = if (isPlaying) "Pause" else "Play"
                         )
                     }
-
                     IconButton(onClick = { playerController.next() }) {
                         Icon(Icons.Filled.SkipNext, contentDescription = "Next")
                     }

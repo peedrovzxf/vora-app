@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.peedrovzxf.vora.data.local.AppDatabase
@@ -25,7 +26,7 @@ import com.peedrovzxf.vora.data.model.Song
 import com.peedrovzxf.vora.data.repository.SongMetadataRepository
 import com.peedrovzxf.vora.player.PlayerController
 import com.peedrovzxf.vora.ui.navigation.NavGraph
-import com.peedrovzxf.vora.ui.player.NowPlayingBar
+import com.peedrovzxf.vora.ui.player.NowPlayingSheet
 import com.peedrovzxf.vora.ui.theme.VoraTheme
 
 class MainActivity : ComponentActivity() {
@@ -49,6 +50,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VoraApp(playerController: PlayerController) {
     val context = LocalContext.current
@@ -71,15 +73,12 @@ fun VoraApp(playerController: PlayerController) {
 
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        hasPermission = granted
-    }
+    ) { granted -> hasPermission = granted }
 
     LaunchedEffect(hasPermission) {
         if (hasPermission) {
             val source = MediaStoreSource(context)
             val rawSongs = source.getSongs()
-
             val metadataRepository = SongMetadataRepository(
                 AppDatabase.getInstance(context).songMetadataDao()
             )
@@ -100,10 +99,33 @@ fun VoraApp(playerController: PlayerController) {
         return
     }
 
-    Scaffold(
-        bottomBar = { NowPlayingBar(playerController) }
+    val currentSong by playerController.currentSong.collectAsState()
+    val navBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val sheetPeekHeight = if (currentSong != null) 72.dp + navBarHeight else 0.dp
+
+    val sheetState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            initialValue = SheetValue.PartiallyExpanded,
+            skipHiddenState = true
+        )
+    )
+
+    BottomSheetScaffold(
+        scaffoldState = sheetState,
+        sheetPeekHeight = sheetPeekHeight,
+        sheetDragHandle = null,
+        sheetContent = {
+            NowPlayingSheet(
+                playerController = playerController,
+                sheetState = sheetState.bottomSheetState
+            )
+        }
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = paddingValues.calculateBottomPadding())
+        ) {
             NavGraph(
                 navController = navController,
                 playerController = playerController,
