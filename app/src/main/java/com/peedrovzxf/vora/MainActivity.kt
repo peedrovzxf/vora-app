@@ -79,14 +79,14 @@ fun VoraApp(playerController: PlayerController) {
         if (hasPermission) {
             val source = MediaStoreSource(context)
             val rawSongs = source.getSongs()
-            albums = source.getAlbums()
-            artists = source.getArtists()
 
             val metadataRepository = SongMetadataRepository(
                 AppDatabase.getInstance(context).songMetadataDao()
             )
             metadataRepository.getAllSongsWithMetadata(rawSongs).collect { updated ->
                 mergedSongs = updated
+                albums = buildAlbums(updated)
+                artists = buildArtists(updated)
             }
         } else {
             launcher.launch(permission)
@@ -113,4 +113,33 @@ fun VoraApp(playerController: PlayerController) {
             )
         }
     }
+}
+
+fun buildAlbums(songs: List<Song>): List<Album> {
+    return songs
+        .groupBy { it.album }
+        .map { (albumName, albumSongs) ->
+            Album(
+                id = albumSongs.first().id,
+                name = albumName,
+                artist = albumSongs.first().artist,
+                albumArtUri = albumSongs.first().albumArtUri,
+                songs = albumSongs
+            )
+        }
+        .sortedBy { it.name }
+}
+
+fun buildArtists(songs: List<Song>): List<Artist> {
+    val albums = buildAlbums(songs)
+    return albums
+        .groupBy { it.artist }
+        .map { (artistName, artistAlbums) ->
+            Artist(
+                name = artistName,
+                albums = artistAlbums,
+                songs = artistAlbums.flatMap { it.songs }
+            )
+        }
+        .sortedBy { it.name }
 }
