@@ -25,7 +25,8 @@ fun SongsTab(
     playerController: PlayerController,
     playlists: List<Playlist>,
     onAddToPlaylist: (playlistId: Long, songId: Long) -> Unit,
-    onEditSong: (songId: Long) -> Unit
+    onEditSong: (songId: Long) -> Unit,
+    onAddToQueue: (Song) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -38,7 +39,8 @@ fun SongsTab(
                 songs = songs,
                 playlists = playlists,
                 onAddToPlaylist = onAddToPlaylist,
-                onEditSong = onEditSong
+                onEditSong = onEditSong,
+                onAddToQueue = onAddToQueue
             )
         }
     }
@@ -51,7 +53,8 @@ fun SongItem(
     songs: List<Song>,
     playlists: List<Playlist>,
     onAddToPlaylist: (playlistId: Long, songId: Long) -> Unit,
-    onEditSong: (songId: Long) -> Unit
+    onEditSong: (songId: Long) -> Unit,
+    onAddToQueue: (Song) -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -95,6 +98,15 @@ fun SongItem(
                 text = { Text("Edit info") },
                 onClick = {
                     onEditSong(song.id)
+                    showMenu = false
+                }
+            )
+            HorizontalDivider()
+
+            DropdownMenuItem(
+                text = { Text("Add to queue") },
+                onClick = {
+                    onAddToQueue(song)
                     showMenu = false
                 }
             )

@@ -50,6 +50,9 @@ fun LibraryScreen(
                 },
                 onEditSong = { songId ->
                     navController.navigate(Screen.EditSong.createRoute(songId))
+                },
+                onAddToQueue = { song ->
+                    playerController.addToQueue(song)
                 }
             )
             1 -> AlbumsTab(

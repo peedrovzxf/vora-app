@@ -2,10 +2,10 @@ package com.peedrovzxf.vora.ui.player
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,6 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.peedrovzxf.vora.player.PlayerController
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 
 @Composable
 fun QueueScreen(
@@ -22,6 +26,11 @@ fun QueueScreen(
 ) {
     val queue by playerController.queue.collectAsState()
     val currentSong by playerController.currentSong.collectAsState()
+
+    val lazyListState = rememberLazyListState()
+    val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
+        playerController.moveInQueue(from.index - 1, to.index - 1)
+    }
 
     Column(
         modifier = Modifier
@@ -47,42 +56,53 @@ fun QueueScreen(
         HorizontalDivider()
 
         LazyColumn(
+            state = lazyListState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
-            itemsIndexed(queue) { index, song ->
+            item { Spacer(modifier = Modifier.height(0.dp)) }
+
+            itemsIndexed(queue, key = { _, song -> song.id }) { index, song ->
                 val isCurrentSong = song.id == currentSong?.id
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { playerController.playFromQueue(index) }
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = song.title,
-                            style = MaterialTheme.typography.bodyLarge,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            color = if (isCurrentSong) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface
+                ReorderableItem(reorderState, key = song.id) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { playerController.playFromQueue(index) }
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Filled.DragHandle,
+                            contentDescription = "Drag",
+                            modifier = Modifier.draggableHandle()
                         )
-                        Text(
-                            text = song.artist,
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    if (!isCurrentSong) {
-                        IconButton(onClick = { playerController.removeFromQueue(index) }) {
-                            Icon(Icons.Filled.Close, contentDescription = "Remove")
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = song.title,
+                                style = MaterialTheme.typography.bodyLarge,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                color = if (isCurrentSong) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = song.artist,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        if (!isCurrentSong) {
+                            IconButton(onClick = { playerController.removeFromQueue(index) }) {
+                                Icon(Icons.Filled.Close, contentDescription = "Remove")
+                            }
                         }
                     }
-                }
-                if (isCurrentSong) {
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    if (isCurrentSong) {
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    }
                 }
             }
         }

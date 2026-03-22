@@ -191,6 +191,22 @@ class PlayerController(context: Context) {
         playCurrent()
     }
 
+    fun addToQueue(song: Song) {
+        _queueList = _queueList.toMutableList().also { it.add(song) }
+        _queueState.value = _queueList
+    }
+
+    fun moveInQueue(from: Int, to: Int) {
+        if (from == to) return
+        _queueList = _queueList.toMutableList().also { it.add(to, it.removeAt(from)) }
+        when {
+            from == currentIndex -> currentIndex = to
+            currentIndex in (from + 1)..to -> currentIndex--
+            currentIndex in to..<from -> currentIndex++
+        }
+        _queueState.value = _queueList
+    }
+
     fun removeFromQueue(index: Int) {
         if (index == currentIndex) return
         _queueList = _queueList.toMutableList().also { it.removeAt(index) }
