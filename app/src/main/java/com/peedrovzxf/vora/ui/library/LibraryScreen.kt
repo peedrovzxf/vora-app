@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
 import com.peedrovzxf.vora.data.model.Album
 import com.peedrovzxf.vora.data.model.Artist
 import com.peedrovzxf.vora.data.model.Song
@@ -11,6 +12,7 @@ import com.peedrovzxf.vora.player.PlayerController
 import com.peedrovzxf.vora.ui.library.tabs.AlbumsTab
 import com.peedrovzxf.vora.ui.library.tabs.ArtistsTab
 import com.peedrovzxf.vora.ui.library.tabs.SongsTab
+import com.peedrovzxf.vora.ui.navigation.Screen
 import com.peedrovzxf.vora.ui.playlist.PlaylistScreen
 import com.peedrovzxf.vora.ui.playlist.PlaylistViewModel
 
@@ -20,7 +22,8 @@ fun LibraryScreen(
     albums: List<Album>,
     artists: List<Artist>,
     playerController: PlayerController,
-    playlistViewModel: PlaylistViewModel
+    playlistViewModel: PlaylistViewModel,
+    navController: NavHostController
 ) {
     val tabs = listOf("Songs", "Albums", "Artists", "Playlists")
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -48,7 +51,13 @@ fun LibraryScreen(
             )
             1 -> AlbumsTab(albums = albums, playerController = playerController)
             2 -> ArtistsTab(artists = artists, playerController = playerController)
-            3 -> PlaylistScreen(viewModel = playlistViewModel, playerController = playerController)
+            3 -> PlaylistScreen(
+                viewModel = playlistViewModel,
+                playerController = playerController,
+                onOpenPlaylist = { playlistId, playlistName ->
+                    navController.navigate(Screen.PlaylistDetail.createRoute(playlistId, playlistName))
+                }
+            )
         }
     }
 }

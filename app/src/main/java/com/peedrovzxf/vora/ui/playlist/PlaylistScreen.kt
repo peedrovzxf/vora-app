@@ -18,7 +18,8 @@ import com.peedrovzxf.vora.player.PlayerController
 @Composable
 fun PlaylistScreen(
     viewModel: PlaylistViewModel,
-    playerController: PlayerController
+    playerController: PlayerController,
+    onOpenPlaylist: (playlistId: Long, playlistName: String) -> Unit
 ) {
     val playlists by viewModel.playlists.collectAsState()
     var showCreateDialog by remember { mutableStateOf(false) }
@@ -39,7 +40,7 @@ fun PlaylistScreen(
             items(playlists) { playlist ->
                 PlaylistItem(
                     playlist = playlist,
-                    onPlay = { playerController.play(playlist.songs.first(), playlist.songs) },
+                    onOpen = { onOpenPlaylist(playlist.id, playlist.name) },
                     onDelete = { viewModel.deletePlaylist(playlist.id, playlist.name) }
                 )
             }
@@ -60,13 +61,13 @@ fun PlaylistScreen(
 @Composable
 fun PlaylistItem(
     playlist: Playlist,
-    onPlay: () -> Unit,
+    onOpen: () -> Unit,
     onDelete: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onPlay() }
+            .clickable { onOpen() }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
