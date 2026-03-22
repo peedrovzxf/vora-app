@@ -21,21 +21,32 @@ import androidx.core.content.ContextCompat
 import com.peedrovzxf.vora.data.local.MediaStoreSource
 import com.peedrovzxf.vora.data.model.Song
 import com.peedrovzxf.vora.ui.theme.VoraTheme
+import androidx.compose.foundation.clickable
+import com.peedrovzxf.vora.player.PlayerController
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var playerController: PlayerController
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        playerController = PlayerController(this)
         enableEdgeToEdge()
         setContent {
             VoraTheme {
-                SongListScreen()
+                SongListScreen(playerController)
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        playerController.release()
     }
 }
 
 @Composable
-fun SongListScreen() {
+fun SongListScreen(playerController: PlayerController) {
     val context = LocalContext.current
     var songs by remember { mutableStateOf<List<Song>>(emptyList()) }
     val permission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
@@ -70,7 +81,7 @@ fun SongListScreen() {
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
             items(songs) { song ->
-                SongItem(song)
+                SongItem(song, playerController)
             }
         }
     } else {
@@ -81,10 +92,11 @@ fun SongListScreen() {
 }
 
 @Composable
-fun SongItem(song: Song) {
+fun SongItem(song: Song, playerController: PlayerController) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { playerController.play(song.path) }
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Text(text = song.title, style = MaterialTheme.typography.bodyLarge)
