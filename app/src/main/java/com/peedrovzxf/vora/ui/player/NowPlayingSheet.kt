@@ -2,6 +2,7 @@ package com.peedrovzxf.vora.ui.player
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -32,11 +33,20 @@ fun NowPlayingSheet(
 
     val isExpanded = sheetState.currentValue == SheetValue.Expanded
 
-    val currentMs = (progress * duration).toLong()
-    val currentMinutes = (currentMs / 1000 / 60).toInt()
-    val currentSeconds = (currentMs / 1000 % 60).toInt()
     val totalMinutes = (duration / 1000 / 60).toInt()
     val totalSeconds = (duration / 1000 % 60).toInt()
+
+    var isDragging by remember { mutableStateOf(false) }
+    var dragProgress by remember { mutableStateOf(0f) }
+    val displayProgress = if (isDragging) dragProgress else progress
+
+    LaunchedEffect(progress) {
+        if (isDragging) {
+            if (kotlin.math.abs(progress - dragProgress) < 0.02f) {
+                isDragging = false
+            }
+        }
+    }
 
     currentSong?.let { song ->
         Column(
@@ -95,11 +105,11 @@ fun NowPlayingSheet(
                 }
             }
 
-            // Expanded content
             AnimatedVisibility(visible = isExpanded) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .statusBarsPadding()
                         .padding(horizontal = 32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -143,16 +153,37 @@ fun NowPlayingSheet(
 
                     Column {
                         Slider(
-                            value = progress,
-                            onValueChange = { playerController.seekTo(it) },
-                            modifier = Modifier.fillMaxWidth()
+                            value = displayProgress,
+                            onValueChange = {
+                                isDragging = true
+                                dragProgress = it
+                            },
+                            onValueChangeFinished = {
+                                playerController.seekTo(dragProgress)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            thumb = {
+                                SliderDefaults.Thumb(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            },
+                            track = { sliderState ->
+                                SliderDefaults.Track(
+                                    sliderState = sliderState,
+                                    modifier = Modifier.height(4.dp)
+                                )
+                            }
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
+                            val displayMs = (displayProgress * duration).toLong()
+                            val displayMinutes = (displayMs / 1000 / 60).toInt()
+                            val displaySeconds = (displayMs / 1000 % 60).toInt()
                             Text(
-                                text = "%d:%02d".format(currentMinutes, currentSeconds),
+                                text = "%d:%02d".format(displayMinutes, displaySeconds),
                                 style = MaterialTheme.typography.labelSmall
                             )
                             Text(
