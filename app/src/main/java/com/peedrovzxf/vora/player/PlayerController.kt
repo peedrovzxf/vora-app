@@ -7,16 +7,30 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.peedrovzxf.vora.data.model.Song
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class PlayerController(context: Context) {
 
     val player = ExoPlayer.Builder(context).build()
+
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     private val _currentSong = MutableStateFlow<Song?>(null)
     val currentSong: StateFlow<Song?> = _currentSong
 
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying
+
+    private val _progress = MutableStateFlow(0f)
+    val progress: StateFlow<Float> = _progress
+
+    private val _duration = MutableStateFlow(0L)
+    val duration: StateFlow<Long> = _duration
 
     private var queue: List<Song> = emptyList()
     private var currentIndex: Int = -1
@@ -26,7 +40,25 @@ class PlayerController(context: Context) {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _isPlaying.value = isPlaying
             }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_READY) {
+                    _duration.value = player.duration
+                }
+            }
         })
+
+        scope.launch {
+            while (true) {
+                if (player.isPlaying) {
+                    val duration = player.duration
+                    if (duration > 0) {
+                        _progress.value = player.currentPosition.toFloat() / duration.toFloat()
+                    }
+                }
+                delay(500)
+            }
+        }
     }
 
     fun setQueue(songs: List<Song>, startIndex: Int) {
@@ -69,7 +101,13 @@ class PlayerController(context: Context) {
         }
     }
 
+    fun seekTo(progress: Float) {
+        val position = (progress * player.duration).toLong()
+        player.seekTo(position)
+    }
+
     fun release() {
+        scope.cancel()
         player.release()
     }
 }
