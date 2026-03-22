@@ -6,12 +6,19 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [PlaylistEntity::class, PlaylistSongEntity::class, SongMetadataEntity::class],
-    version = 2
+    entities = [
+        PlaylistEntity::class,
+        PlaylistSongEntity::class,
+        SongMetadataEntity::class,
+        AlbumMetadataEntity::class,
+        AlbumSongOrderEntity::class
+    ],
+    version = 3
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun playlistDao(): PlaylistDao
     abstract fun songMetadataDao(): SongMetadataDao
+    abstract fun albumMetadataDao(): AlbumMetadataDao
 
     companion object {
         @Volatile

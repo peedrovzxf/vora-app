@@ -57,6 +57,9 @@ fun LibraryScreen(
                 playerController = playerController,
                 onOpenAlbum = { albumId ->
                     navController.navigate(Screen.AlbumDetail.createRoute(albumId))
+                },
+                onEditAlbum = { albumId ->
+                    navController.navigate(Screen.EditAlbum.createRoute(albumId))
                 }
             )
             2 -> ArtistsTab(

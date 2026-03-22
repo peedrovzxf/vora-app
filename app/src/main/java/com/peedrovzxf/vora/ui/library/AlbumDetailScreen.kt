@@ -7,8 +7,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,15 +27,26 @@ import com.peedrovzxf.vora.player.PlayerController
 fun AlbumDetailScreen(
     album: Album,
     playerController: PlayerController,
+    onEditAlbum: (albumId: Long) -> Unit,
     onBack: () -> Unit
 ) {
+    val viewModel: AlbumDetailViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    viewModel.setAlbum(album)
+    val currentAlbum by viewModel.album.collectAsState()
+
+    val displayAlbum = currentAlbum ?: album
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(album.name) },
+                title = { Text(displayAlbum.name) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { onEditAlbum(displayAlbum.id) }) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Edit album")
                     }
                 }
             )
@@ -51,8 +65,8 @@ fun AlbumDetailScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     AsyncImage(
-                        model = album.albumArtUri,
-                        contentDescription = album.name,
+                        model = displayAlbum.albumArtUri,
+                        contentDescription = displayAlbum.name,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .size(200.dp)
@@ -60,16 +74,16 @@ fun AlbumDetailScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = album.name,
+                        text = displayAlbum.name,
                         style = MaterialTheme.typography.titleLarge
                     )
                     Text(
-                        text = album.artist,
+                        text = displayAlbum.artist,
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(onClick = {
-                        playerController.play(album.songs.first(), album.songs)
+                        playerController.play(displayAlbum.songs.first(), displayAlbum.songs)
                     }) {
                         Text("Play all")
                     }
@@ -77,11 +91,11 @@ fun AlbumDetailScreen(
                 HorizontalDivider()
             }
 
-            items(album.songs) { song ->
+            items(displayAlbum.songs) { song ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { playerController.play(song, album.songs) }
+                        .clickable { playerController.play(song, displayAlbum.songs) }
                         .padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {

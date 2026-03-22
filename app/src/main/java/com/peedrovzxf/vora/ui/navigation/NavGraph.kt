@@ -1,6 +1,8 @@
 package com.peedrovzxf.vora.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -12,9 +14,12 @@ import com.peedrovzxf.vora.ui.library.LibraryScreen
 import com.peedrovzxf.vora.ui.playlist.PlaylistScreen
 import com.peedrovzxf.vora.ui.playlist.PlaylistViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.peedrovzxf.vora.ui.edit.EditAlbumScreen
+import com.peedrovzxf.vora.ui.edit.EditAlbumViewModel
 import com.peedrovzxf.vora.ui.edit.EditSongScreen
 import com.peedrovzxf.vora.ui.edit.EditSongViewModel
 import com.peedrovzxf.vora.ui.library.AlbumDetailScreen
+import com.peedrovzxf.vora.ui.library.AlbumDetailViewModel
 import com.peedrovzxf.vora.ui.library.ArtistDetailScreen
 import com.peedrovzxf.vora.ui.playlist.PlaylistDetailScreen
 
@@ -33,6 +38,10 @@ sealed class Screen(val route: String) {
 
     object ArtistDetail : Screen("artist/{artistName}") {
         fun createRoute(artistName: String) = "artist/$artistName"
+    }
+
+    object EditAlbum : Screen("editalbum/{albumId}") {
+        fun createRoute(albumId: Long) = "editalbum/$albumId"
     }
 }
 
@@ -102,6 +111,9 @@ fun NavGraph(
             AlbumDetailScreen(
                 album = album,
                 playerController = playerController,
+                onEditAlbum = { albumId ->
+                    navController.navigate(Screen.EditAlbum.createRoute(albumId))
+                },
                 onBack = { navController.popBackStack() }
             )
         }
@@ -115,6 +127,23 @@ fun NavGraph(
                 onOpenAlbum = { albumId ->
                     navController.navigate(Screen.AlbumDetail.createRoute(albumId))
                 },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.EditAlbum.route) { backStackEntry ->
+            val albumId = backStackEntry.arguments?.getString("albumId")?.toLong() ?: return@composable
+            val album = albums.find { it.id == albumId } ?: return@composable
+            val editAlbumViewModel: EditAlbumViewModel = viewModel()
+            val albumDetailViewModel: AlbumDetailViewModel = viewModel()
+            albumDetailViewModel.setAlbum(album)
+            val currentAlbum by albumDetailViewModel.album.collectAsState()
+
+            val displayAlbum = currentAlbum ?: album
+
+            EditAlbumScreen(
+                album = displayAlbum,
+                viewModel = editAlbumViewModel,
                 onBack = { navController.popBackStack() }
             )
         }

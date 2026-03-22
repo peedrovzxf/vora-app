@@ -1,6 +1,7 @@
 package com.peedrovzxf.vora.ui.library.tabs
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -21,7 +22,8 @@ import com.peedrovzxf.vora.player.PlayerController
 fun AlbumsTab(
     albums: List<Album>,
     playerController: PlayerController,
-    onOpenAlbum: (albumId: Long) -> Unit
+    onOpenAlbum: (albumId: Long) -> Unit,
+    onEditAlbum: (albumId: Long) -> Unit
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -31,17 +33,25 @@ fun AlbumsTab(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(albums) { album ->
-            AlbumItem(album = album, onClick = { onOpenAlbum(album.id) })
+            AlbumItem(
+                album = album,
+                onClick = { onOpenAlbum(album.id) },
+                onLongClick = { onEditAlbum(album.id) }
+            )
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AlbumItem(album: Album, onClick: () -> Unit) {
+fun AlbumItem(album: Album, onClick: () -> Unit, onLongClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
     ) {
         AsyncImage(
             model = album.albumArtUri,
