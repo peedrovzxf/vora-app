@@ -7,7 +7,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
@@ -47,7 +46,6 @@ class MainActivity : ComponentActivity() {
             AppDatabase.getInstance(this).playHistoryDao()
         )
         playerController = PlayerController(this, historyRepository)
-        enableEdgeToEdge()
         setContent {
             VoraApp(playerController)
         }
@@ -133,10 +131,15 @@ fun VoraApp(playerController: PlayerController) {
                             enter = slideInVertically { it },
                             exit = slideOutVertically { it }
                         ) {
-                            MiniPlayerBar(
-                                playerController = playerController,
-                                onTap = { isNowPlayingExpanded = true }
-                            )
+                            val showNavBar = currentRoute in topLevelRoutes
+                            Box(
+                                modifier = if (!showNavBar) Modifier.navigationBarsPadding() else Modifier
+                            ) {
+                                MiniPlayerBar(
+                                    playerController = playerController,
+                                    onTap = { isNowPlayingExpanded = true }
+                                )
+                            }
                         }
                         AnimatedVisibility(visible = currentRoute in topLevelRoutes) {
                             NavigationBar {
@@ -185,7 +188,12 @@ fun VoraApp(playerController: PlayerController) {
                     }
                 }
             ) { innerPadding ->
-                Box(modifier = Modifier.padding(innerPadding)) {
+                android.util.Log.d("Vora", "innerPadding bottom: ${innerPadding.calculateBottomPadding()}")
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                ) {
                     NavGraph(
                         navController = navController,
                         playerController = playerController,

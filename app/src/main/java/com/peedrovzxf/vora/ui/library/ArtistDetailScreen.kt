@@ -19,7 +19,6 @@ import coil.compose.AsyncImage
 import com.peedrovzxf.vora.data.model.Artist
 import com.peedrovzxf.vora.player.PlayerController
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArtistDetailScreen(
     artist: Artist,
@@ -27,53 +26,35 @@ fun ArtistDetailScreen(
     onOpenAlbum: (albumId: Long) -> Unit,
     onBack: () -> Unit
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(artist.name) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
-        LazyColumn(
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
+            Text(text = artist.name, style = MaterialTheme.typography.titleLarge)
+        }
+
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = artist.name,
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Text(
-                        text = "${artist.albums.size} albums · ${artist.songs.size} songs",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    Text(text = artist.name, style = MaterialTheme.typography.titleLarge)
+                    Text(text = "${artist.albums.size} albums · ${artist.songs.size} songs", style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = {
-                        playerController.play(artist.songs.first(), artist.songs)
-                    }) {
+                    Button(onClick = { playerController.play(artist.songs.first(), artist.songs) }) {
                         Text("Play all")
                     }
                 }
                 HorizontalDivider()
-                Text(
-                    text = "Albums",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+                Text(text = "Albums", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             }
-
             items(artist.albums) { album ->
                 Row(
                     modifier = Modifier
@@ -86,22 +67,12 @@ fun ArtistDetailScreen(
                         model = album.albumArtUri,
                         contentDescription = album.name,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(52.dp)
-                            .clip(RoundedCornerShape(6.dp))
+                        modifier = Modifier.size(52.dp).clip(RoundedCornerShape(6.dp))
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = album.name,
-                            style = MaterialTheme.typography.bodyLarge,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = "${album.songs.size} songs",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        Text(text = album.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(text = "${album.songs.size} songs", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }

@@ -22,7 +22,6 @@ import coil.compose.AsyncImage
 import com.peedrovzxf.vora.data.model.Album
 import com.peedrovzxf.vora.player.PlayerController
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlbumDetailScreen(
     album: Album,
@@ -33,30 +32,31 @@ fun AlbumDetailScreen(
     val viewModel: AlbumDetailViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     viewModel.setAlbum(album)
     val currentAlbum by viewModel.album.collectAsState()
-
     val displayAlbum = currentAlbum ?: album
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(displayAlbum.name) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { onEditAlbum(displayAlbum.id) }) {
-                        Icon(Icons.Filled.Edit, contentDescription = "Edit album")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
-        LazyColumn(
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
+            Text(
+                text = displayAlbum.name,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            IconButton(onClick = { onEditAlbum(displayAlbum.id) }) {
+                Icon(Icons.Filled.Edit, contentDescription = "Edit album")
+            }
+        }
+
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
                 Column(
                     modifier = Modifier
@@ -65,7 +65,9 @@ fun AlbumDetailScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     AsyncImage(
-                        model = displayAlbum.albumArtUri,
+                        model = displayAlbum.albumArtUri?.let {
+                            if (it.startsWith("/")) java.io.File(it) else it
+                        },
                         contentDescription = displayAlbum.name,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
@@ -73,24 +75,16 @@ fun AlbumDetailScreen(
                             .clip(RoundedCornerShape(12.dp))
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = displayAlbum.name,
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Text(
-                        text = displayAlbum.artist,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    Text(text = displayAlbum.name, style = MaterialTheme.typography.titleLarge)
+                    Text(text = displayAlbum.artist, style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(onClick = {
-                        playerController.play(displayAlbum.songs.first(), displayAlbum.songs)
-                    }) {
-                        Text("Play all")
-                    }
+                        if (displayAlbum.songs.isNotEmpty())
+                            playerController.play(displayAlbum.songs.first(), displayAlbum.songs)
+                    }) { Text("Play all") }
                 }
                 HorizontalDivider()
             }
-
             items(displayAlbum.songs) { song ->
                 Row(
                     modifier = Modifier
@@ -100,18 +94,8 @@ fun AlbumDetailScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = song.title,
-                            style = MaterialTheme.typography.bodyLarge,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = song.artist,
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        Text(text = song.title, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(text = song.artist, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }

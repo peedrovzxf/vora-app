@@ -33,7 +33,6 @@ fun NowPlayingBar(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .navigationBarsPadding()
             ) {
                 LinearProgressIndicator(
                     progress = { progress },

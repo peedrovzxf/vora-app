@@ -3,6 +3,7 @@ package com.peedrovzxf.vora.ui.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -62,7 +63,8 @@ fun NavGraph(
     NavHost(
         navController = navController,
         startDestination = Screen.Home.route,
-        modifier = modifier
+        modifier = modifier,
+        contentAlignment = Alignment.TopStart
     ) {
         composable(Screen.Home.route) {
             val homeViewModel: HomeViewModel = viewModel()

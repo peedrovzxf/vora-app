@@ -35,7 +35,6 @@ fun QueueScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
     ) {
         Row(
             modifier = Modifier

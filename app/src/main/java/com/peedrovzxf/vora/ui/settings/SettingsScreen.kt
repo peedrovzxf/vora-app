@@ -32,7 +32,6 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
             .padding(16.dp)
     ) {
         Text(
