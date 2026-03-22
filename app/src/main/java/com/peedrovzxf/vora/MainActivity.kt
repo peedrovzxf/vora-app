@@ -9,18 +9,15 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LibraryMusic
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -35,9 +32,10 @@ import com.peedrovzxf.vora.data.repository.SongMetadataRepository
 import com.peedrovzxf.vora.player.PlayerController
 import com.peedrovzxf.vora.ui.navigation.NavGraph
 import com.peedrovzxf.vora.ui.navigation.Screen
-import com.peedrovzxf.vora.ui.player.NowPlayingSheet
+import com.peedrovzxf.vora.ui.player.NowPlayingScreen
 import com.peedrovzxf.vora.ui.settings.SettingsViewModel
 import com.peedrovzxf.vora.ui.theme.VoraTheme
+import com.peedrovzxf.vora.ui.player.MiniPlayerBar
 
 class MainActivity : ComponentActivity() {
 
@@ -83,10 +81,7 @@ fun VoraApp(playerController: PlayerController) {
 
         var hasPermission by remember {
             mutableStateOf(
-                ContextCompat.checkSelfPermission(
-                    context,
-                    permission
-                ) == PackageManager.PERMISSION_GRANTED
+                ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
             )
         }
 
@@ -119,93 +114,76 @@ fun VoraApp(playerController: PlayerController) {
         }
 
         val currentSong by playerController.currentSong.collectAsState()
-        val navBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        val sheetPeekHeight = if (currentSong != null) 72.dp + navBarHeight else 0.dp
+        val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+        var isNowPlayingExpanded by remember { mutableStateOf(false) }
 
-        val sheetState = rememberBottomSheetScaffoldState(
-            bottomSheetState = rememberStandardBottomSheetState(
-                initialValue = SheetValue.PartiallyExpanded,
-                skipHiddenState = true
-            )
+        val topLevelRoutes = listOf(
+            Screen.Home.route,
+            Screen.Search.route,
+            Screen.Library.route,
+            Screen.Settings.route
         )
 
-        val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-
-        BottomSheetScaffold(
-            scaffoldState = sheetState,
-            sheetPeekHeight = sheetPeekHeight,
-            sheetDragHandle = null,
-            sheetContent = {
-                NowPlayingSheet(
-                    playerController = playerController,
-                    sheetState = sheetState.bottomSheetState
-                )
-            }
-        ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
                 bottomBar = {
-                    val topLevelRoutes = listOf(
-                        Screen.Home.route,
-                        Screen.Search.route,
-                        Screen.Library.route,
-                        Screen.Settings.route
-                    )
-                    if (currentRoute in topLevelRoutes) {
-                        NavigationBar {
-                            NavigationBarItem(
-                                selected = currentRoute == Screen.Home.route,
-                                onClick = {
-                                    navController.navigate(Screen.Home.route) {
-                                        popUpTo(Screen.Home.route) { inclusive = true }
-                                    }
-                                },
-                                icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
-                                label = { Text("Home") }
-                            )
-                            NavigationBarItem(
-                                selected = currentRoute == Screen.Search.route,
-                                onClick = {
-                                    navController.navigate(Screen.Search.route) {
-                                        popUpTo(Screen.Home.route)
-                                    }
-                                },
-                                icon = { Icon(Icons.Filled.Search, contentDescription = "Search") },
-                                label = { Text("Search") }
-                            )
-                            NavigationBarItem(
-                                selected = currentRoute == Screen.Library.route,
-                                onClick = {
-                                    navController.navigate(Screen.Library.route) {
-                                        popUpTo(Screen.Home.route)
-                                    }
-                                },
-                                icon = {
-                                    Icon(
-                                        Icons.Filled.LibraryMusic,
-                                        contentDescription = "Library"
-                                    )
-                                },
-                                label = { Text("Library") }
-                            )
-                            NavigationBarItem(
-                                selected = currentRoute == Screen.Settings.route,
-                                onClick = {
-                                    navController.navigate(Screen.Settings.route) {
-                                        popUpTo(Screen.Home.route)
-                                    }
-                                },
-                                icon = {
-                                    Icon(
-                                        Icons.Filled.Settings,
-                                        contentDescription = "Settings"
-                                    )
-                                },
-                                label = { Text("Settings") }
+                    Column {
+                        AnimatedVisibility(
+                            visible = currentSong != null && !isNowPlayingExpanded,
+                            enter = slideInVertically { it },
+                            exit = slideOutVertically { it }
+                        ) {
+                            MiniPlayerBar(
+                                playerController = playerController,
+                                onTap = { isNowPlayingExpanded = true }
                             )
                         }
+                        AnimatedVisibility(visible = currentRoute in topLevelRoutes) {
+                            NavigationBar {
+                                NavigationBarItem(
+                                    selected = currentRoute == Screen.Home.route,
+                                    onClick = {
+                                        navController.navigate(Screen.Home.route) {
+                                            popUpTo(Screen.Home.route) { inclusive = true }
+                                        }
+                                    },
+                                    icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
+                                    label = { Text("Home") }
+                                )
+                                NavigationBarItem(
+                                    selected = currentRoute == Screen.Search.route,
+                                    onClick = {
+                                        navController.navigate(Screen.Search.route) {
+                                            popUpTo(Screen.Home.route)
+                                        }
+                                    },
+                                    icon = { Icon(Icons.Filled.Search, contentDescription = "Search") },
+                                    label = { Text("Search") }
+                                )
+                                NavigationBarItem(
+                                    selected = currentRoute == Screen.Library.route,
+                                    onClick = {
+                                        navController.navigate(Screen.Library.route) {
+                                            popUpTo(Screen.Home.route)
+                                        }
+                                    },
+                                    icon = { Icon(Icons.Filled.LibraryMusic, contentDescription = "Library") },
+                                    label = { Text("Library") }
+                                )
+                                NavigationBarItem(
+                                    selected = currentRoute == Screen.Settings.route,
+                                    onClick = {
+                                        navController.navigate(Screen.Settings.route) {
+                                            popUpTo(Screen.Home.route)
+                                        }
+                                    },
+                                    icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings") },
+                                    label = { Text("Settings") }
+                                )
+                            }
+                        }
                     }
-                },
-                modifier = Modifier.padding(paddingValues)
+                }
             ) { innerPadding ->
                 Box(modifier = Modifier.padding(innerPadding)) {
                     NavGraph(
@@ -216,6 +194,18 @@ fun VoraApp(playerController: PlayerController) {
                         artists = artists
                     )
                 }
+            }
+
+            AnimatedVisibility(
+                visible = isNowPlayingExpanded,
+                enter = slideInVertically { it },
+                exit = slideOutVertically { it },
+                modifier = Modifier.fillMaxSize()
+            ) {
+                NowPlayingScreen(
+                    playerController = playerController,
+                    onDismiss = { isNowPlayingExpanded = false }
+                )
             }
         }
     }
