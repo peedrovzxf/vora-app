@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.peedrovzxf.vora.data.model.Playlist
 import com.peedrovzxf.vora.data.model.Song
 import com.peedrovzxf.vora.player.PlayerController
@@ -78,7 +79,7 @@ fun SongItem(
                 )
                 Text(
                     text = song.artist,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 12.sp),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
