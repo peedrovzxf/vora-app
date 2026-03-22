@@ -42,9 +42,11 @@ class PlayerController(context: Context) {
     private val _duration = MutableStateFlow(0L)
     val duration: StateFlow<Long> = _duration
 
-    private var queue: List<Song> = emptyList()
-    private var originalQueue: List<Song> = emptyList()
+    private val _queueState = MutableStateFlow<List<Song>>(emptyList())
+    val queue: StateFlow<List<Song>> = _queueState
 
+    private var _queueList: List<Song> = emptyList()
+    private var originalQueue: List<Song> = emptyList()
     private var currentIndex: Int = -1
 
     private var controllerFuture: ListenableFuture<MediaController>
@@ -68,18 +70,17 @@ class PlayerController(context: Context) {
                         _duration.value = controller?.duration ?: 0L
                     }
                     if (playbackState == Player.STATE_ENDED) {
-                        android.util.Log.d("Vora", "STATE_ENDED, repeatMode: ${_repeatMode.value}")
                         when (_repeatMode.value) {
                             RepeatMode.ONE -> {
                                 controller?.seekTo(0)
                                 controller?.play()
                             }
                             RepeatMode.ALL -> {
-                                currentIndex = (currentIndex + 1) % queue.size
+                                currentIndex = (currentIndex + 1) % _queueList.size
                                 playCurrent()
                             }
                             RepeatMode.NONE -> {
-                                if (currentIndex < queue.size - 1) {
+                                if (currentIndex < _queueList.size - 1) {
                                     currentIndex++
                                     playCurrent()
                                 }
@@ -110,14 +111,15 @@ class PlayerController(context: Context) {
     fun toggleShuffle() {
         _isShuffled.value = !_isShuffled.value
         if (_isShuffled.value) {
-            val currentSong = queue[currentIndex]
-            queue = queue.shuffled()
-            currentIndex = queue.indexOf(currentSong)
+            val currentSong = _queueList[currentIndex]
+            _queueList = _queueList.shuffled()
+            currentIndex = _queueList.indexOf(currentSong)
         } else {
-            val currentSong = queue[currentIndex]
-            queue = originalQueue.toList()
-            currentIndex = queue.indexOf(currentSong)
+            val currentSong = _queueList[currentIndex]
+            _queueList = originalQueue.toList()
+            currentIndex = _queueList.indexOf(currentSong)
         }
+        _queueState.value = _queueList
     }
 
     fun toggleRepeat() {
@@ -126,14 +128,13 @@ class PlayerController(context: Context) {
             RepeatMode.ALL -> RepeatMode.ONE
             RepeatMode.ONE -> RepeatMode.NONE
         }
-
         controller?.repeatMode = Player.REPEAT_MODE_OFF
     }
 
     fun play(song: Song, songs: List<Song>) {
         originalQueue = songs
         currentIndex = songs.indexOf(song)
-        queue = if (_isShuffled.value) {
+        _queueList = if (_isShuffled.value) {
             val shuffled = songs.shuffled().toMutableList()
             shuffled.remove(song)
             shuffled.add(0, song)
@@ -142,12 +143,13 @@ class PlayerController(context: Context) {
         } else {
             songs
         }
+        _queueState.value = _queueList
         playCurrent()
     }
 
     private fun playCurrent() {
-        if (currentIndex < 0 || currentIndex >= queue.size) return
-        val song = queue[currentIndex]
+        if (currentIndex < 0 || currentIndex >= _queueList.size) return
+        val song = _queueList[currentIndex]
         _currentSong.value = song
         val mediaItem = song.toMediaItem()
         controller?.setMediaItem(mediaItem)
@@ -161,7 +163,7 @@ class PlayerController(context: Context) {
 
     fun next() {
         when {
-            currentIndex < queue.size - 1 -> {
+            currentIndex < _queueList.size - 1 -> {
                 currentIndex++
                 playCurrent()
             }
@@ -182,6 +184,18 @@ class PlayerController(context: Context) {
     fun seekTo(progress: Float) {
         val position = (progress * (controller?.duration ?: 0L)).toLong()
         controller?.seekTo(position)
+    }
+
+    fun playFromQueue(index: Int) {
+        currentIndex = index
+        playCurrent()
+    }
+
+    fun removeFromQueue(index: Int) {
+        if (index == currentIndex) return
+        _queueList = _queueList.toMutableList().also { it.removeAt(index) }
+        if (index < currentIndex) currentIndex--
+        _queueState.value = _queueList
     }
 
     fun release() {

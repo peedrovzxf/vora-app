@@ -6,6 +6,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -50,6 +51,16 @@ fun NowPlayingSheet(
         }
     }
 
+    var showQueue by remember { mutableStateOf(false) }
+
+    if (showQueue) {
+        ModalBottomSheet(onDismissRequest = { showQueue = false }) {
+            QueueScreen(
+                playerController = playerController,
+                onDismiss = { showQueue = false }
+            )
+        }
+    }
     currentSong?.let { song ->
         Column(
             modifier = Modifier
@@ -248,6 +259,21 @@ fun NowPlayingSheet(
                                 },
                                 modifier = Modifier.size(28.dp)
                             )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = {
+                            scope.launch { sheetState.partialExpand() }
+                        }) {
+                            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Collapse")
+                        }
+                        IconButton(onClick = { showQueue = true }) {
+                            Icon(Icons.AutoMirrored.Filled.QueueMusic, contentDescription = "Queue")
                         }
                     }
 
