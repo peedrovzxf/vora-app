@@ -14,8 +14,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.peedrovzxf.vora.data.local.ImageStorage
 import com.peedrovzxf.vora.data.model.Song
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,10 +32,15 @@ fun EditSongScreen(
     var album by remember { mutableStateOf(song.album) }
     var albumArtPath by remember { mutableStateOf(song.albumArtUri) }
 
+    val context = LocalContext.current
+
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { albumArtPath = it.toString() }
+        uri?.let {
+            val savedPath = ImageStorage.saveAlbumArt(context, it, song.id)
+            albumArtPath = savedPath
+        }
     }
 
     Scaffold(
@@ -70,7 +77,9 @@ fun EditSongScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             AsyncImage(
-                model = albumArtPath,
+                model = albumArtPath?.let {
+                    if (it.startsWith("/")) java.io.File(it) else it
+                },
                 contentDescription = "Album art",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
