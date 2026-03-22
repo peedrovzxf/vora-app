@@ -18,7 +18,11 @@ import com.peedrovzxf.vora.data.model.Album
 import com.peedrovzxf.vora.player.PlayerController
 
 @Composable
-fun AlbumsTab(albums: List<Album>, playerController: PlayerController) {
+fun AlbumsTab(
+    albums: List<Album>,
+    playerController: PlayerController,
+    onOpenAlbum: (albumId: Long) -> Unit
+) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier.fillMaxSize(),
@@ -27,17 +31,17 @@ fun AlbumsTab(albums: List<Album>, playerController: PlayerController) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(albums) { album ->
-            AlbumItem(album = album, playerController = playerController)
+            AlbumItem(album = album, onClick = { onOpenAlbum(album.id) })
         }
     }
 }
 
 @Composable
-fun AlbumItem(album: Album, playerController: PlayerController) {
+fun AlbumItem(album: Album, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { playerController.play(album.songs.first(), album.songs) }
+            .clickable { onClick() }
     ) {
         AsyncImage(
             model = album.albumArtUri,

@@ -14,6 +14,7 @@ import com.peedrovzxf.vora.ui.playlist.PlaylistViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.peedrovzxf.vora.ui.edit.EditSongScreen
 import com.peedrovzxf.vora.ui.edit.EditSongViewModel
+import com.peedrovzxf.vora.ui.library.AlbumDetailScreen
 import com.peedrovzxf.vora.ui.playlist.PlaylistDetailScreen
 
 sealed class Screen(val route: String) {
@@ -24,6 +25,9 @@ sealed class Screen(val route: String) {
     }
     object EditSong : Screen("edit/{songId}") {
         fun createRoute(songId: Long) = "edit/$songId"
+    }
+    object AlbumDetail : Screen("album/{albumId}") {
+        fun createRoute(albumId: Long) = "album/$albumId"
     }
 }
 
@@ -83,6 +87,16 @@ fun NavGraph(
             EditSongScreen(
                 song = song,
                 viewModel = editViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.AlbumDetail.route) { backStackEntry ->
+            val albumId = backStackEntry.arguments?.getString("albumId")?.toLong() ?: return@composable
+            val album = albums.find { it.id == albumId } ?: return@composable
+            AlbumDetailScreen(
+                album = album,
+                playerController = playerController,
                 onBack = { navController.popBackStack() }
             )
         }
