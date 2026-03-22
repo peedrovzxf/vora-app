@@ -23,6 +23,7 @@ import com.peedrovzxf.vora.data.model.Song
 import com.peedrovzxf.vora.ui.theme.VoraTheme
 import androidx.compose.foundation.clickable
 import com.peedrovzxf.vora.player.PlayerController
+import com.peedrovzxf.vora.ui.player.NowPlayingBar
 
 class MainActivity : ComponentActivity() {
 
@@ -34,7 +35,15 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             VoraTheme {
-                SongListScreen(playerController)
+                Scaffold(
+                    bottomBar = {
+                        NowPlayingBar(playerController)
+                    }
+                ) { paddingValues ->
+                    Box(modifier = Modifier.padding(paddingValues)) {
+                        SongListScreen(playerController)
+                    }
+                }
             }
         }
     }
@@ -76,12 +85,13 @@ fun SongListScreen(playerController: PlayerController) {
     }
 
     if (hasPermission) {
+        val songList = songs
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
-            items(songs) { song ->
-                SongItem(song, playerController)
+            items(songList) { song ->
+                SongItem(song, playerController, songList)
             }
         }
     } else {
@@ -92,11 +102,11 @@ fun SongListScreen(playerController: PlayerController) {
 }
 
 @Composable
-fun SongItem(song: Song, playerController: PlayerController) {
+fun SongItem(song: Song, playerController: PlayerController, songs: List<Song>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { playerController.play(song.path) }
+            .clickable { playerController.play(song, songs) }
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Text(text = song.title, style = MaterialTheme.typography.bodyLarge)
