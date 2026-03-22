@@ -29,6 +29,8 @@ fun NowPlayingSheet(
     val isPlaying by playerController.isPlaying.collectAsState()
     val progress by playerController.progress.collectAsState()
     val duration by playerController.duration.collectAsState()
+    val isShuffled by playerController.isShuffled.collectAsState()
+    val repeatMode by playerController.repeatMode.collectAsState()
     val scope = rememberCoroutineScope()
 
     val isExpanded = sheetState.currentValue == SheetValue.Expanded
@@ -59,9 +61,7 @@ fun NowPlayingSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(72.dp)
-                        .clickable {
-                            scope.launch { sheetState.expand() }
-                        }
+                        .clickable { scope.launch { sheetState.expand() } }
                         .padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -198,6 +198,16 @@ fun NowPlayingSheet(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        IconButton(onClick = { playerController.toggleShuffle() }) {
+                            Icon(
+                                Icons.Filled.Shuffle,
+                                contentDescription = "Shuffle",
+                                tint = if (isShuffled) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+
                         IconButton(onClick = { playerController.previous() }) {
                             Icon(
                                 Icons.Filled.SkipPrevious,
@@ -205,6 +215,7 @@ fun NowPlayingSheet(
                                 modifier = Modifier.size(36.dp)
                             )
                         }
+
                         FilledIconButton(
                             onClick = { playerController.togglePlayPause() },
                             modifier = Modifier.size(64.dp)
@@ -215,11 +226,27 @@ fun NowPlayingSheet(
                                 modifier = Modifier.size(36.dp)
                             )
                         }
+
                         IconButton(onClick = { playerController.next() }) {
                             Icon(
                                 Icons.Filled.SkipNext,
                                 contentDescription = "Next",
                                 modifier = Modifier.size(36.dp)
+                            )
+                        }
+
+                        IconButton(onClick = { playerController.toggleRepeat() }) {
+                            Icon(
+                                when (repeatMode) {
+                                    PlayerController.RepeatMode.ONE -> Icons.Filled.RepeatOne
+                                    else -> Icons.Filled.Repeat
+                                },
+                                contentDescription = "Repeat",
+                                tint = when (repeatMode) {
+                                    PlayerController.RepeatMode.NONE -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                    else -> MaterialTheme.colorScheme.primary
+                                },
+                                modifier = Modifier.size(28.dp)
                             )
                         }
                     }

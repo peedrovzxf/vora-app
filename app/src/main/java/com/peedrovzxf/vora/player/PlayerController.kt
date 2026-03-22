@@ -28,6 +28,14 @@ class PlayerController(context: Context) {
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying
 
+    private val _isShuffled = MutableStateFlow(false)
+    val isShuffled: StateFlow<Boolean> = _isShuffled
+
+    private val _repeatMode = MutableStateFlow(RepeatMode.NONE)
+    val repeatMode: StateFlow<RepeatMode> = _repeatMode
+
+    enum class RepeatMode { NONE, ONE, ALL }
+
     private val _progress = MutableStateFlow(0f)
     val progress: StateFlow<Float> = _progress
 
@@ -35,6 +43,8 @@ class PlayerController(context: Context) {
     val duration: StateFlow<Long> = _duration
 
     private var queue: List<Song> = emptyList()
+    private var originalQueue: List<Song> = emptyList()
+
     private var currentIndex: Int = -1
 
     private var controllerFuture: ListenableFuture<MediaController>
@@ -57,15 +67,28 @@ class PlayerController(context: Context) {
                     if (playbackState == Player.STATE_READY) {
                         _duration.value = controller?.duration ?: 0L
                     }
-                }
-
-                override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                    val index = controller?.currentMediaItemIndex ?: return
-                    if (index in queue.indices) {
-                        currentIndex = index
-                        _currentSong.value = queue[index]
+                    if (playbackState == Player.STATE_ENDED) {
+                        android.util.Log.d("Vora", "STATE_ENDED, repeatMode: ${_repeatMode.value}")
+                        when (_repeatMode.value) {
+                            RepeatMode.ONE -> {
+                                controller?.seekTo(0)
+                                controller?.play()
+                            }
+                            RepeatMode.ALL -> {
+                                currentIndex = (currentIndex + 1) % queue.size
+                                playCurrent()
+                            }
+                            RepeatMode.NONE -> {
+                                if (currentIndex < queue.size - 1) {
+                                    currentIndex++
+                                    playCurrent()
+                                }
+                            }
+                        }
                     }
                 }
+
+                override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {}
             })
         }, MoreExecutors.directExecutor())
 
@@ -84,22 +107,51 @@ class PlayerController(context: Context) {
         }
     }
 
-    fun play(song: Song, songs: List<Song>) {
-        currentIndex = songs.indexOf(song)
-        queue = songs
+    fun toggleShuffle() {
+        _isShuffled.value = !_isShuffled.value
+        if (_isShuffled.value) {
+            val currentSong = queue[currentIndex]
+            queue = queue.shuffled()
+            currentIndex = queue.indexOf(currentSong)
+        } else {
+            val currentSong = queue[currentIndex]
+            queue = originalQueue.toList()
+            currentIndex = queue.indexOf(currentSong)
+        }
+    }
 
-        val mediaItems = songs.map { it.toMediaItem() }
-        controller?.setMediaItems(mediaItems, currentIndex, 0L)
-        controller?.prepare()
-        controller?.play()
-        _currentSong.value = song
+    fun toggleRepeat() {
+        _repeatMode.value = when (_repeatMode.value) {
+            RepeatMode.NONE -> RepeatMode.ALL
+            RepeatMode.ALL -> RepeatMode.ONE
+            RepeatMode.ONE -> RepeatMode.NONE
+        }
+
+        controller?.repeatMode = Player.REPEAT_MODE_OFF
+    }
+
+    fun play(song: Song, songs: List<Song>) {
+        originalQueue = songs
+        currentIndex = songs.indexOf(song)
+        queue = if (_isShuffled.value) {
+            val shuffled = songs.shuffled().toMutableList()
+            shuffled.remove(song)
+            shuffled.add(0, song)
+            currentIndex = 0
+            shuffled
+        } else {
+            songs
+        }
+        playCurrent()
     }
 
     private fun playCurrent() {
         if (currentIndex < 0 || currentIndex >= queue.size) return
         val song = queue[currentIndex]
         _currentSong.value = song
-        controller?.seekToDefaultPosition(currentIndex)
+        val mediaItem = song.toMediaItem()
+        controller?.setMediaItem(mediaItem)
+        controller?.prepare()
         controller?.play()
     }
 
@@ -108,9 +160,15 @@ class PlayerController(context: Context) {
     }
 
     fun next() {
-        if (currentIndex < queue.size - 1) {
-            currentIndex++
-            playCurrent()
+        when {
+            currentIndex < queue.size - 1 -> {
+                currentIndex++
+                playCurrent()
+            }
+            _repeatMode.value == RepeatMode.ALL -> {
+                currentIndex = 0
+                playCurrent()
+            }
         }
     }
 
