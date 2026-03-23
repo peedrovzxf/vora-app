@@ -1,5 +1,6 @@
 package com.peedrovzxf.vora.ui.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,9 +15,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.peedrovzxf.vora.data.model.Album
 import com.peedrovzxf.vora.data.model.Song
@@ -29,22 +34,25 @@ fun HomeScreen(
     onOpenAlbum: (Long) -> Unit,
     onOpenArtist: (String) -> Unit
 ) {
-    val recentSongs by viewModel.recentSongs.collectAsState()
+    val recentSongs     by viewModel.recentSongs.collectAsState()
     val frequentArtists by viewModel.frequentArtists.collectAsState()
     val suggestedAlbums by viewModel.suggestedAlbums.collectAsState()
-    val dailySong by viewModel.dailySong.collectAsState()
-    val allSongs = viewModel.allSongs.collectAsState().value
+    val dailySong       by viewModel.dailySong.collectAsState()
+    val allSongs         = viewModel.allSongs.collectAsState().value
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 16.dp)
+        modifier       = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
             Text(
-                text = "Vora",
-                style = MaterialTheme.typography.headlineLarge,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
+                text     = "vora",
+                style    = MaterialTheme.typography.headlineLarge.copy(
+                    fontWeight    = FontWeight.Bold,
+                    letterSpacing = (-1).sp
+                ),
+                color    = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(start = 20.dp, top = 20.dp, bottom = 8.dp)
             )
         }
 
@@ -52,7 +60,7 @@ fun HomeScreen(
             item {
                 SectionTitle("Song of the day")
                 DailySongCard(
-                    song = song,
+                    song   = song,
                     onPlay = { playerController.play(song, allSongs) }
                 )
             }
@@ -60,14 +68,15 @@ fun HomeScreen(
 
         if (recentSongs.isNotEmpty()) {
             item {
+                Spacer(modifier = Modifier.height(8.dp))
                 SectionTitle("Recently played")
                 LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    contentPadding        = PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     items(recentSongs) { song ->
                         SongCard(
-                            song = song,
+                            song    = song,
                             onClick = { playerController.play(song, recentSongs) }
                         )
                     }
@@ -77,14 +86,15 @@ fun HomeScreen(
 
         if (frequentArtists.isNotEmpty()) {
             item {
+                Spacer(modifier = Modifier.height(8.dp))
                 SectionTitle("Your artists")
                 LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    contentPadding        = PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(frequentArtists) { artistName ->
                         ArtistChip(
-                            name = artistName,
+                            name    = artistName,
                             onClick = { onOpenArtist(artistName) }
                         )
                     }
@@ -94,14 +104,15 @@ fun HomeScreen(
 
         if (suggestedAlbums.isNotEmpty()) {
             item {
+                Spacer(modifier = Modifier.height(8.dp))
                 SectionTitle("Suggested albums")
                 LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    contentPadding        = PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     items(suggestedAlbums) { album ->
                         AlbumCard(
-                            album = album,
+                            album   = album,
                             onClick = { onOpenAlbum(album.id) }
                         )
                     }
@@ -112,52 +123,114 @@ fun HomeScreen(
 }
 
 @Composable
-fun SectionTitle(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-    )
+fun SectionTitle(
+    title    : String,
+    onSeeAll : (() -> Unit)? = null
+) {
+    Row(
+        modifier              = Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 12.dp, top = 12.dp, bottom = 10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment     = Alignment.CenterVertically
+    ) {
+        Text(
+            text  = title,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+        )
+        if (onSeeAll != null) {
+            TextButton(onClick = onSeeAll, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                Text(
+                    text  = "See all",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
 }
 
 @Composable
 fun DailySongCard(song: Song, onPlay: () -> Unit) {
-    Card(
+    val bgColor = MaterialTheme.colorScheme.background
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clickable { onPlay() },
-        shape = RoundedCornerShape(12.dp)
+            .padding(horizontal = 20.dp)
+            .height(200.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable { onPlay() }
     ) {
+        AsyncImage(
+            model              = song.albumArtUri?.let {
+                if (it.startsWith("/")) java.io.File(it) else it
+            },
+            contentDescription = null,
+            contentScale       = ContentScale.Crop,
+            modifier           = Modifier.fillMaxSize()
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colorStops = arrayOf(
+                            0.0f  to Color.Transparent,
+                            0.45f to Color.Black.copy(alpha = 0.25f),
+                            1.0f  to Color.Black.copy(alpha = 0.80f)
+                        )
+                    )
+                )
+        )
+
         Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier              = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomStart)
+                .padding(start = 16.dp, end = 16.dp, bottom = 14.dp),
+            verticalAlignment     = Alignment.Bottom,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            AsyncImage(
-                model = song.albumArtUri?.let {
-                    if (it.startsWith("/")) java.io.File(it) else it
-                },
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(72.dp)
-                    .clip(RoundedCornerShape(8.dp))
-            )
-            Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = song.title,
-                    style = MaterialTheme.typography.titleMedium,
+                    text     = "SONG OF THE DAY",
+                    style    = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                    color    = Color.White.copy(alpha = 0.60f),
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                Text(
+                    text     = song.title,
+                    style    = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color    = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = song.artist,
-                    style = MaterialTheme.typography.bodySmall
+                    text     = song.artist,
+                    style    = MaterialTheme.typography.bodyMedium,
+                    color    = Color.White.copy(alpha = 0.75f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-            FilledIconButton(onClick = onPlay) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = "Play")
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            FilledIconButton(
+                onClick  = onPlay,
+                modifier = Modifier.size(44.dp),
+                colors   = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = Color.White,
+                    contentColor   = Color.Black
+                )
+            ) {
+                Icon(
+                    imageVector        = Icons.Filled.PlayArrow,
+                    contentDescription = "Play",
+                    modifier           = Modifier.size(24.dp)
+                )
             }
         }
     }
@@ -167,23 +240,30 @@ fun DailySongCard(song: Song, onPlay: () -> Unit) {
 fun SongCard(song: Song, onClick: () -> Unit) {
     Column(
         modifier = Modifier
-            .width(120.dp)
+            .width(140.dp)
             .clickable { onClick() }
     ) {
         AsyncImage(
-            model = song.albumArtUri?.let {
+            model              = song.albumArtUri?.let {
                 if (it.startsWith("/")) java.io.File(it) else it
             },
             contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(120.dp)
-                .clip(RoundedCornerShape(8.dp))
+            contentScale       = ContentScale.Crop,
+            modifier           = Modifier
+                .size(140.dp)
+                .clip(RoundedCornerShape(10.dp))
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = song.title,
-            style = MaterialTheme.typography.bodySmall,
+            text     = song.title,
+            style    = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text     = song.artist,
+            style    = MaterialTheme.typography.bodySmall,
+            color    = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -194,29 +274,30 @@ fun SongCard(song: Song, onClick: () -> Unit) {
 fun AlbumCard(album: Album, onClick: () -> Unit) {
     Column(
         modifier = Modifier
-            .width(140.dp)
+            .width(150.dp)
             .clickable { onClick() }
     ) {
         AsyncImage(
-            model = album.albumArtUri?.let {
+            model              = album.albumArtUri?.let {
                 if (it.startsWith("/")) java.io.File(it) else it
             },
             contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(140.dp)
-                .clip(RoundedCornerShape(8.dp))
+            contentScale       = ContentScale.Crop,
+            modifier           = Modifier
+                .size(150.dp)
+                .clip(RoundedCornerShape(10.dp))
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = album.name,
-            style = MaterialTheme.typography.bodySmall,
+            text     = album.name,
+            style    = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            text = album.artist,
-            style = MaterialTheme.typography.labelSmall,
+            text     = album.artist,
+            style    = MaterialTheme.typography.bodySmall,
+            color    = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -225,15 +306,32 @@ fun AlbumCard(album: Album, onClick: () -> Unit) {
 
 @Composable
 fun ArtistChip(name: String, onClick: () -> Unit) {
-    Surface(
-        shape = RoundedCornerShape(50),
-        tonalElevation = 4.dp,
-        modifier = Modifier.clickable { onClick() }
+    Row(
+        modifier              = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clickable { onClick() }
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        Box(
+            modifier         = Modifier
+                .size(22.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text  = name.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
         Text(
-            text = name,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            text  = name,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }

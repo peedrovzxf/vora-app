@@ -25,6 +25,7 @@ import com.peedrovzxf.vora.ui.library.ArtistDetailScreen
 import com.peedrovzxf.vora.ui.library.LibraryScreen
 import com.peedrovzxf.vora.ui.playlist.PlaylistDetailScreen
 import com.peedrovzxf.vora.ui.playlist.PlaylistViewModel
+import com.peedrovzxf.vora.ui.liked.LikedSongsScreen
 import com.peedrovzxf.vora.ui.search.SearchScreen
 import com.peedrovzxf.vora.ui.settings.SettingsScreen
 import com.peedrovzxf.vora.ui.settings.SettingsViewModel
@@ -49,6 +50,7 @@ sealed class Screen(val route: String) {
     object EditAlbum : Screen("editalbum/{albumId}") {
         fun createRoute(albumId: Long) = "editalbum/$albumId"
     }
+    object LikedSongs : Screen("liked")
 }
 
 @Composable
@@ -100,12 +102,12 @@ fun NavGraph(
             val playlistViewModel: PlaylistViewModel = viewModel()
             playlistViewModel.setSongs(songs)
             LibraryScreen(
-                songs = songs,
-                albums = albums,
-                artists = artists,
-                playerController = playerController,
+                songs             = songs,
+                albums            = albums,
+                artists           = artists,
+                playerController  = playerController,
                 playlistViewModel = playlistViewModel,
-                navController = navController
+                navController     = navController
             )
         }
 
@@ -165,6 +167,14 @@ fun NavGraph(
                 song = song,
                 viewModel = editViewModel,
                 onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.LikedSongs.route) {
+            LikedSongsScreen(
+                songs            = songs,
+                playerController = playerController,
+                onBack           = { navController.popBackStack() }
             )
         }
 

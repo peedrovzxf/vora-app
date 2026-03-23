@@ -6,23 +6,14 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Accent colors
-val AccentDefault = Color(0xFF6650A4)
-val AccentRed = Color(0xFFE53935)
-val AccentBlue = Color(0xFF1E88E5)
-val AccentGreen = Color(0xFF43A047)
-val AccentOrange = Color(0xFFFB8C00)
-val AccentPink = Color(0xFFE91E63)
-val AccentTeal = Color(0xFF00897B)
-
 fun accentFromKey(key: String): Color = when (key) {
-    "red" -> AccentRed
-    "blue" -> AccentBlue
-    "green" -> AccentGreen
+    "red"    -> AccentRed
+    "blue"   -> AccentBlue
+    "green"  -> AccentGreen
     "orange" -> AccentOrange
-    "pink" -> AccentPink
-    "teal" -> AccentTeal
-    else -> AccentDefault
+    "pink"   -> AccentPink
+    "teal"   -> AccentTeal
+    else     -> AccentDefault
 }
 
 @Composable
@@ -32,35 +23,56 @@ fun VoraTheme(
     content: @Composable () -> Unit
 ) {
     val accent = accentFromKey(accentColor)
-    val onAccent = Color.White
 
     val colorScheme = if (darkTheme) {
         darkColorScheme(
-            primary = accent,
-            onPrimary = onAccent,
-            secondary = accent.copy(alpha = 0.7f),
-            background = Color(0xFF0A0A0A),
-            surface = Color(0xFF141414),
-            surfaceVariant = Color(0xFF1E1E1E),
-            onBackground = Color(0xFFF0F0F0),
-            onSurface = Color(0xFFF0F0F0),
+            primary            = accent,
+            onPrimary          = Color.White,
+            primaryContainer   = accent.copy(alpha = 0.15f),
+            onPrimaryContainer = Color.White,
+            secondary          = accent.copy(alpha = 0.7f),
+            onSecondary        = Color.White,
+            secondaryContainer = Surface3,
+            onSecondaryContainer = Color.White,
+            background         = Black,
+            onBackground       = Color.White,
+            surface            = Surface1,
+            onSurface          = Color.White,
+            surfaceVariant     = Surface2,
+            onSurfaceVariant   = Grey400,
+            outline            = Surface4,
+            outlineVariant     = Surface3,
+            scrim              = Color.Black.copy(alpha = 0.7f),
+            inverseSurface     = Color(0xFFF0F0F0),
+            inverseOnSurface   = Color(0xFF111111),
         )
     } else {
         lightColorScheme(
-            primary = accent,
-            onPrimary = onAccent,
-            secondary = accent.copy(alpha = 0.7f),
-            background = Color(0xFFFAFAFA),
-            surface = Color(0xFFFFFFFF),
-            surfaceVariant = Color(0xFFF0F0F0),
-            onBackground = Color(0xFF0A0A0A),
-            onSurface = Color(0xFF0A0A0A),
+            primary            = accent,
+            onPrimary          = Color.White,
+            primaryContainer   = accent.copy(alpha = 0.12f),
+            onPrimaryContainer = accent,
+            secondary          = accent.copy(alpha = 0.7f),
+            onSecondary        = Color.White,
+            secondaryContainer = Color(0xFFEEEEEE),
+            onSecondaryContainer = Color(0xFF111111),
+            background         = Color(0xFFF7F7F7),
+            onBackground       = Color(0xFF0A0A0A),
+            surface            = Color(0xFFFFFFFF),
+            onSurface          = Color(0xFF0A0A0A),
+            surfaceVariant     = Color(0xFFEEEEEE),
+            onSurfaceVariant   = Color(0xFF555555),
+            outline            = Color(0xFFCCCCCC),
+            outlineVariant     = Color(0xFFE8E8E8),
+            scrim              = Color.Black.copy(alpha = 0.4f),
+            inverseSurface     = Color(0xFF1A1A1A),
+            inverseOnSurface   = Color(0xFFF0F0F0),
         )
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
-        content = content
+        typography  = Typography,
+        content     = content
     )
 }

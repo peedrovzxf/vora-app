@@ -7,15 +7,19 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -31,10 +35,10 @@ import com.peedrovzxf.vora.data.repository.SongMetadataRepository
 import com.peedrovzxf.vora.player.PlayerController
 import com.peedrovzxf.vora.ui.navigation.NavGraph
 import com.peedrovzxf.vora.ui.navigation.Screen
+import com.peedrovzxf.vora.ui.player.MiniPlayerBar
 import com.peedrovzxf.vora.ui.player.NowPlayingScreen
 import com.peedrovzxf.vora.ui.settings.SettingsViewModel
 import com.peedrovzxf.vora.ui.theme.VoraTheme
-import com.peedrovzxf.vora.ui.player.MiniPlayerBar
 
 class MainActivity : ComponentActivity() {
 
@@ -42,6 +46,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         val historyRepository = PlayHistoryRepository(
             AppDatabase.getInstance(this).playHistoryDao()
         )
@@ -57,19 +62,19 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VoraApp(playerController: PlayerController) {
     val settingsViewModel: SettingsViewModel = viewModel()
-    val isDarkMode by settingsViewModel.isDarkMode.collectAsState()
-    val accentColor by settingsViewModel.accentColor.collectAsState()
+    val isDarkMode   by settingsViewModel.isDarkMode.collectAsState()
+    val accentColor  by settingsViewModel.accentColor.collectAsState()
 
     VoraTheme(darkTheme = isDarkMode, accentColor = accentColor) {
-        val context = LocalContext.current
+        val context       = LocalContext.current
         val navController = rememberNavController()
+
         var mergedSongs by remember { mutableStateOf<List<Song>>(emptyList()) }
-        var albums by remember { mutableStateOf<List<Album>>(emptyList()) }
-        var artists by remember { mutableStateOf<List<Artist>>(emptyList()) }
+        var albums      by remember { mutableStateOf<List<Album>>(emptyList()) }
+        var artists     by remember { mutableStateOf<List<Artist>>(emptyList()) }
 
         val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             Manifest.permission.READ_MEDIA_AUDIO
@@ -89,15 +94,15 @@ fun VoraApp(playerController: PlayerController) {
 
         LaunchedEffect(hasPermission) {
             if (hasPermission) {
-                val source = MediaStoreSource(context)
-                val rawSongs = source.getSongs()
+                val source             = MediaStoreSource(context)
+                val rawSongs           = source.getSongs()
                 val metadataRepository = SongMetadataRepository(
                     AppDatabase.getInstance(context).songMetadataDao()
                 )
                 metadataRepository.getAllSongsWithMetadata(rawSongs).collect { updated ->
                     mergedSongs = updated
-                    albums = buildAlbums(updated)
-                    artists = buildArtists(updated)
+                    albums      = buildAlbums(updated)
+                    artists     = buildArtists(updated)
                 }
             } else {
                 launcher.launch(permission)
@@ -111,8 +116,8 @@ fun VoraApp(playerController: PlayerController) {
             return@VoraTheme
         }
 
-        val currentSong by playerController.currentSong.collectAsState()
-        val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+        val currentSong    by playerController.currentSong.collectAsState()
+        val currentRoute    = navController.currentBackStackEntryAsState().value?.destination?.route
         var isNowPlayingExpanded by remember { mutableStateOf(false) }
 
         val topLevelRoutes = listOf(
@@ -124,12 +129,13 @@ fun VoraApp(playerController: PlayerController) {
 
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
+                containerColor = MaterialTheme.colorScheme.background,
                 bottomBar = {
                     Column {
                         AnimatedVisibility(
                             visible = currentSong != null && !isNowPlayingExpanded,
-                            enter = slideInVertically { it },
-                            exit = slideOutVertically { it }
+                            enter   = slideInVertically { it } + fadeIn(),
+                            exit    = slideOutVertically { it } + fadeOut()
                         ) {
                             val showNavBar = currentRoute in topLevelRoutes
                             Box(
@@ -137,98 +143,138 @@ fun VoraApp(playerController: PlayerController) {
                             ) {
                                 MiniPlayerBar(
                                     playerController = playerController,
-                                    onTap = { isNowPlayingExpanded = true }
+                                    onTap            = { isNowPlayingExpanded = true }
                                 )
                             }
                         }
+
                         AnimatedVisibility(visible = currentRoute in topLevelRoutes) {
-                            NavigationBar {
+                            NavigationBar(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                tonalElevation = 0.dp
+                            ) {
                                 NavigationBarItem(
                                     selected = currentRoute == Screen.Home.route,
-                                    onClick = {
+                                    onClick  = {
                                         navController.navigate(Screen.Home.route) {
                                             popUpTo(Screen.Home.route) { inclusive = true }
                                         }
                                     },
-                                    icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
-                                    label = { Text("Home") }
+                                    icon  = {
+                                        Icon(
+                                            imageVector = if (currentRoute == Screen.Home.route)
+                                                Icons.Filled.Home else Icons.Outlined.Home,
+                                            contentDescription = "Home"
+                                        )
+                                    },
+                                    label  = { Text("Home") },
+                                    colors = navItemColors()
                                 )
                                 NavigationBarItem(
                                     selected = currentRoute == Screen.Search.route,
-                                    onClick = {
+                                    onClick  = {
                                         navController.navigate(Screen.Search.route) {
                                             popUpTo(Screen.Home.route)
                                         }
                                     },
-                                    icon = { Icon(Icons.Filled.Search, contentDescription = "Search") },
-                                    label = { Text("Search") }
+                                    icon  = {
+                                        Icon(
+                                            imageVector = if (currentRoute == Screen.Search.route)
+                                                Icons.Filled.Search else Icons.Outlined.Search,
+                                            contentDescription = "Search"
+                                        )
+                                    },
+                                    label  = { Text("Search") },
+                                    colors = navItemColors()
                                 )
                                 NavigationBarItem(
                                     selected = currentRoute == Screen.Library.route,
-                                    onClick = {
+                                    onClick  = {
                                         navController.navigate(Screen.Library.route) {
                                             popUpTo(Screen.Home.route)
                                         }
                                     },
-                                    icon = { Icon(Icons.Filled.LibraryMusic, contentDescription = "Library") },
-                                    label = { Text("Library") }
+                                    icon  = {
+                                        Icon(
+                                            imageVector = if (currentRoute == Screen.Library.route)
+                                                Icons.Filled.LibraryMusic else Icons.Outlined.LibraryMusic,
+                                            contentDescription = "Library"
+                                        )
+                                    },
+                                    label  = { Text("Library") },
+                                    colors = navItemColors()
                                 )
                                 NavigationBarItem(
                                     selected = currentRoute == Screen.Settings.route,
-                                    onClick = {
+                                    onClick  = {
                                         navController.navigate(Screen.Settings.route) {
                                             popUpTo(Screen.Home.route)
                                         }
                                     },
-                                    icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings") },
-                                    label = { Text("Settings") }
+                                    icon  = {
+                                        Icon(
+                                            imageVector = if (currentRoute == Screen.Settings.route)
+                                                Icons.Filled.Settings else Icons.Outlined.Settings,
+                                            contentDescription = "Settings"
+                                        )
+                                    },
+                                    label  = { Text("Settings") },
+                                    colors = navItemColors()
                                 )
                             }
                         }
                     }
                 }
             ) { innerPadding ->
-                android.util.Log.d("Vora", "innerPadding bottom: ${innerPadding.calculateBottomPadding()}")
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding)
                 ) {
                     NavGraph(
-                        navController = navController,
+                        navController    = navController,
                         playerController = playerController,
-                        songs = mergedSongs,
-                        albums = albums,
-                        artists = artists
+                        songs            = mergedSongs,
+                        albums           = albums,
+                        artists          = artists
                     )
                 }
             }
 
             AnimatedVisibility(
-                visible = isNowPlayingExpanded,
-                enter = slideInVertically { it },
-                exit = slideOutVertically { it },
+                visible  = isNowPlayingExpanded,
+                enter    = slideInVertically { it } + fadeIn(),
+                exit     = slideOutVertically { it } + fadeOut(),
                 modifier = Modifier.fillMaxSize()
             ) {
                 NowPlayingScreen(
                     playerController = playerController,
-                    onDismiss = { isNowPlayingExpanded = false }
+                    onDismiss        = { isNowPlayingExpanded = false }
                 )
             }
         }
     }
 }
 
+@Composable
+private fun navItemColors() = NavigationBarItemDefaults.colors(
+    indicatorColor            = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+    selectedIconColor         = MaterialTheme.colorScheme.primary,
+    selectedTextColor         = MaterialTheme.colorScheme.primary,
+    unselectedIconColor       = MaterialTheme.colorScheme.onSurfaceVariant,
+    unselectedTextColor       = MaterialTheme.colorScheme.onSurfaceVariant,
+)
+
 fun buildAlbums(songs: List<Song>): List<Album> {
     return songs
         .groupBy { it.album }
         .map { (albumName, albumSongs) ->
             Album(
-                id = albumSongs.first().id,
-                name = albumName,
-                artist = albumSongs.first().artist,
+                id          = albumSongs.first().id,
+                name        = albumName,
+                artist      = albumSongs.first().artist,
                 albumArtUri = albumSongs.first().albumArtUri,
-                songs = albumSongs
+                songs       = albumSongs
             )
         }
         .sortedBy { it.name }
@@ -240,9 +286,9 @@ fun buildArtists(songs: List<Song>): List<Artist> {
         .groupBy { it.artist }
         .map { (artistName, artistAlbums) ->
             Artist(
-                name = artistName,
+                name   = artistName,
                 albums = artistAlbums,
-                songs = artistAlbums.flatMap { it.songs }
+                songs  = artistAlbums.flatMap { it.songs }
             )
         }
         .sortedBy { it.name }

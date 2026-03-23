@@ -4,15 +4,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -37,7 +42,7 @@ fun SearchScreen(
         else songs.filter {
             it.title.contains(query, ignoreCase = true) ||
                     it.artist.contains(query, ignoreCase = true)
-        }.take(5)
+        }.take(6)
     }
 
     val filteredAlbums = remember(query) {
@@ -52,183 +57,269 @@ fun SearchScreen(
         if (query.isBlank()) emptyList()
         else artists.filter {
             it.name.contains(query, ignoreCase = true)
-        }.take(5)
+        }.take(4)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
+    val hasResults = filteredSongs.isNotEmpty() || filteredAlbums.isNotEmpty() || filteredArtists.isNotEmpty()
+
+    Column(modifier = Modifier.fillMaxSize()) {
         Text(
-            text = "Search",
-            style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
+            text     = "Search",
+            style    = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.padding(start = 20.dp, top = 20.dp, bottom = 16.dp)
         )
 
-        OutlinedTextField(
-            value = query,
+        TextField(
+            value         = query,
             onValueChange = { query = it },
-            placeholder = { Text("Songs, artists, albums...") },
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-            singleLine = true,
-            modifier = Modifier
+            placeholder   = {
+                Text(
+                    text  = "Songs, artists, albums…",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            leadingIcon   = {
+                Icon(
+                    imageVector        = Icons.Filled.Search,
+                    contentDescription = null,
+                    tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier           = Modifier.size(22.dp)
+                )
+            },
+            trailingIcon  = {
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = { query = "" }) {
+                        Icon(
+                            imageVector        = Icons.Filled.Close,
+                            contentDescription = "Clear",
+                            tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier           = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            },
+            singleLine    = true,
+            shape         = RoundedCornerShape(50),
+            colors        = TextFieldDefaults.colors(
+                focusedContainerColor          = MaterialTheme.colorScheme.surfaceVariant,
+                unfocusedContainerColor        = MaterialTheme.colorScheme.surfaceVariant,
+                disabledContainerColor         = MaterialTheme.colorScheme.surfaceVariant,
+                focusedIndicatorColor          = Color.Transparent,
+                unfocusedIndicatorColor        = Color.Transparent,
+                disabledIndicatorColor         = Color.Transparent,
+            ),
+            modifier      = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 20.dp)
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        if (query.isBlank()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Search for songs, artists or albums",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                )
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 8.dp)
-            ) {
-                if (filteredSongs.isNotEmpty()) {
-                    item {
-                        Text(
-                            text = "Songs",
-                            style = MaterialTheme.typography.titleSmall,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                        )
-                    }
-                    items(filteredSongs) { song ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { playerController.play(song, songs) }
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            AsyncImage(
-                                model = song.albumArtUri?.let {
-                                    if (it.startsWith("/")) java.io.File(it) else it
-                                },
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(RoundedCornerShape(6.dp))
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = song.title,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = song.artist,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
+        when {
+            query.isBlank() -> EmptySearchState()
+            !hasResults     -> NoResultsState(query = query)
+            else -> {
+                LazyColumn(
+                    modifier       = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
+                    if (filteredSongs.isNotEmpty()) {
+                        item {
+                            SearchSectionHeader(title = "Songs")
                         }
-                    }
-                }
-
-                if (filteredAlbums.isNotEmpty()) {
-                    item {
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                        Text(
-                            text = "Albums",
-                            style = MaterialTheme.typography.titleSmall,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                        )
-                    }
-                    items(filteredAlbums) { album ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onOpenAlbum(album.id) }
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            AsyncImage(
-                                model = album.albumArtUri?.let {
-                                    if (it.startsWith("/")) java.io.File(it) else it
-                                },
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(RoundedCornerShape(6.dp))
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = album.name,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = album.artist,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    }
-                }
-
-                if (filteredArtists.isNotEmpty()) {
-                    item {
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                        Text(
-                            text = "Artists",
-                            style = MaterialTheme.typography.titleSmall,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                        )
-                    }
-                    items(filteredArtists) { artist ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onOpenArtist(artist.name) }
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = artist.name,
-                                style = MaterialTheme.typography.bodyLarge,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                        items(filteredSongs) { song ->
+                            SearchSongRow(
+                                title    = song.title,
+                                subtitle = song.artist,
+                                artUri   = song.albumArtUri,
+                                onClick  = { playerController.play(song, songs) }
                             )
                         }
                     }
-                }
 
-                if (filteredSongs.isEmpty() && filteredAlbums.isEmpty() && filteredArtists.isEmpty()) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No results for \"$query\"",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    if (filteredAlbums.isNotEmpty()) {
+                        item {
+                            SearchSectionHeader(title = "Albums")
+                        }
+                        items(filteredAlbums) { album ->
+                            SearchSongRow(
+                                title    = album.name,
+                                subtitle = album.artist,
+                                artUri   = album.albumArtUri,
+                                onClick  = { onOpenAlbum(album.id) }
+                            )
+                        }
+                    }
+
+                    if (filteredArtists.isNotEmpty()) {
+                        item {
+                            SearchSectionHeader(title = "Artists")
+                        }
+                        items(filteredArtists) { artist ->
+                            SearchArtistRow(
+                                name    = artist.name,
+                                stats   = "${artist.albums.size} albums · ${artist.songs.size} songs",
+                                onClick = { onOpenArtist(artist.name) }
                             )
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun EmptySearchState() {
+    Box(
+        modifier         = Modifier
+            .fillMaxSize()
+            .padding(bottom = 80.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector        = Icons.Filled.MusicNote,
+                contentDescription = null,
+                modifier           = Modifier.size(52.dp),
+                tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+            )
+            Text(
+                text  = "What do you want to hear?",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun NoResultsState(query: String) {
+    Box(
+        modifier         = Modifier
+            .fillMaxSize()
+            .padding(bottom = 80.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text  = "No results for",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text  = "\"$query\"",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@Composable
+private fun SearchSectionHeader(title: String) {
+    Text(
+        text     = title,
+        style    = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+        color    = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 20.dp, top = 20.dp, bottom = 4.dp)
+    )
+}
+
+@Composable
+private fun SearchSongRow(
+    title    : String,
+    subtitle : String,
+    artUri   : String?,
+    onClick  : () -> Unit
+) {
+    Row(
+        modifier          = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(horizontal = 20.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AsyncImage(
+            model              = artUri?.let {
+                if (it.startsWith("/")) java.io.File(it) else it
+            },
+            contentDescription = null,
+            contentScale       = ContentScale.Crop,
+            modifier           = Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(8.dp))
+        )
+        Spacer(modifier = Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text     = title,
+                style    = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text     = subtitle,
+                style    = MaterialTheme.typography.bodySmall,
+                color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun SearchArtistRow(
+    name    : String,
+    stats   : String,
+    onClick : () -> Unit
+) {
+    Row(
+        modifier          = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(horizontal = 20.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier         = Modifier
+                .size(48.dp)
+                .clip(CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                shape    = CircleShape,
+                color    = MaterialTheme.colorScheme.surfaceVariant
+            ) {}
+            Text(
+                text  = name.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(modifier = Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text     = name,
+                style    = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text     = stats,
+                style    = MaterialTheme.typography.bodySmall,
+                color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

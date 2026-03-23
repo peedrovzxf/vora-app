@@ -1,4 +1,4 @@
-package com.peedrovzxf.vora.ui.playlist
+package com.peedrovzxf.vora.ui.liked
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,9 +8,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,18 +23,22 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.peedrovzxf.vora.data.model.Song
 import com.peedrovzxf.vora.player.PlayerController
 
 @Composable
-fun PlaylistDetailScreen(
-    playlistId       : Long,
-    playlistName     : String,
-    viewModel        : PlaylistViewModel,
+fun LikedSongsScreen(
+    songs            : List<Song>,
     playerController : PlayerController,
-    onBack           : () -> Unit
+    onBack           : () -> Unit,
+    likedViewModel   : LikedSongsViewModel = viewModel()
 ) {
-    val songs by viewModel.getPlaylistSongs(playlistId).collectAsState()
+    val likedIds   by likedViewModel.likedIds.collectAsState()
+    val likedSongs  = remember(likedIds, songs) {
+        songs.filter { it.id in likedIds }
+    }
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
 
@@ -42,7 +46,7 @@ fun PlaylistDetailScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
+                    .height(220.dp)
             ) {
                 Box(
                     modifier = Modifier
@@ -50,7 +54,7 @@ fun PlaylistDetailScreen(
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.30f),
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.40f),
                                     MaterialTheme.colorScheme.background
                                 )
                             )
@@ -71,20 +75,27 @@ fun PlaylistDetailScreen(
                 }
 
                 Column(
-                    modifier = Modifier
+                    modifier            = Modifier
                         .align(Alignment.BottomStart)
-                        .padding(start = 20.dp, end = 20.dp, bottom = 16.dp)
+                        .padding(start = 20.dp, end = 20.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Text(
-                        text     = playlistName,
-                        style    = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                        color    = MaterialTheme.colorScheme.onBackground,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                    Icon(
+                        imageVector        = Icons.Filled.Favorite,
+                        contentDescription = null,
+                        tint               = MaterialTheme.colorScheme.primary,
+                        modifier           = Modifier.size(32.dp)
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text  = "${songs.size} ${if (songs.size == 1) "song" else "songs"}",
+                        text  = "Liked Songs",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        text  = "${likedSongs.size} ${if (likedSongs.size == 1) "song" else "songs"}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -92,7 +103,7 @@ fun PlaylistDetailScreen(
             }
         }
 
-        if (songs.isNotEmpty()) {
+        if (likedSongs.isNotEmpty()) {
             item {
                 Row(
                     modifier              = Modifier
@@ -101,7 +112,7 @@ fun PlaylistDetailScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Button(
-                        onClick  = { playerController.play(songs.first(), songs) },
+                        onClick  = { playerController.play(likedSongs.first(), likedSongs) },
                         modifier = Modifier
                             .weight(1f)
                             .height(44.dp),
@@ -118,7 +129,7 @@ fun PlaylistDetailScreen(
 
                     OutlinedButton(
                         onClick  = {
-                            val shuffled = songs.shuffled()
+                            val shuffled = likedSongs.shuffled()
                             playerController.play(shuffled.first(), shuffled)
                         },
                         modifier = Modifier
@@ -144,7 +155,7 @@ fun PlaylistDetailScreen(
             }
         }
 
-        if (songs.isEmpty()) {
+        if (likedSongs.isEmpty()) {
             item {
                 Box(
                     modifier         = Modifier
@@ -157,18 +168,18 @@ fun PlaylistDetailScreen(
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Icon(
-                            imageVector        = Icons.Filled.MusicNote,
+                            imageVector        = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier           = Modifier.size(48.dp),
-                            tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            modifier           = Modifier.size(52.dp),
+                            tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)
                         )
                         Text(
-                            text  = "No songs yet",
+                            text  = "No liked songs yet",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                         Text(
-                            text  = "Long press a song in your library to add it here",
+                            text  = "Tap the heart in Now Playing to save songs here",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                         )
@@ -177,11 +188,11 @@ fun PlaylistDetailScreen(
             }
         }
 
-        items(songs, key = { it.id }) { song ->
+        items(likedSongs, key = { it.id }) { song ->
             Row(
                 modifier          = Modifier
                     .fillMaxWidth()
-                    .clickable { playerController.play(song, songs) }
+                    .clickable { playerController.play(song, likedSongs) }
                     .padding(start = 20.dp, end = 8.dp, top = 9.dp, bottom = 9.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -237,13 +248,13 @@ fun PlaylistDetailScreen(
                 }
 
                 IconButton(
-                    onClick  = { viewModel.removeSongFromPlaylist(playlistId, song.id) },
-                    modifier = Modifier.size(40.dp)
+                    onClick  = { likedViewModel.toggle(song.id) },
+                    modifier = Modifier.size(44.dp)
                 ) {
                     Icon(
-                        imageVector        = Icons.Filled.RemoveCircleOutline,
-                        contentDescription = "Remove from playlist",
-                        tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        imageVector        = Icons.Filled.Favorite,
+                        contentDescription = "Unlike",
+                        tint               = MaterialTheme.colorScheme.primary,
                         modifier           = Modifier.size(20.dp)
                     )
                 }

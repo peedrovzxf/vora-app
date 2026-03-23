@@ -217,6 +217,16 @@ class PlayerController(context: Context, private val historyRepository: PlayHist
         _queueState.value = _queueList
     }
 
+    fun clearQueue() {
+        val current = if (currentIndex >= 0 && currentIndex < _queueList.size) {
+            _queueList[currentIndex]
+        } else null
+        _queueList    = if (current != null) listOf(current) else emptyList()
+        originalQueue = _queueList
+        currentIndex  = if (current != null) 0 else -1
+        _queueState.value = _queueList
+    }
+
     fun release() {
         MediaController.releaseFuture(controllerFuture)
         scope.cancel()
