@@ -46,7 +46,7 @@ fun HomeScreen(
     ) {
         item {
             Text(
-                text     = "vora",
+                text     = "vora.",
                 style    = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight    = FontWeight.Bold,
                     letterSpacing = (-1).sp

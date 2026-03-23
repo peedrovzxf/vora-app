@@ -26,6 +26,8 @@ import com.peedrovzxf.vora.ui.library.LibraryScreen
 import com.peedrovzxf.vora.ui.playlist.PlaylistDetailScreen
 import com.peedrovzxf.vora.ui.playlist.PlaylistViewModel
 import com.peedrovzxf.vora.ui.liked.LikedSongsScreen
+import com.peedrovzxf.vora.ui.download.DownloadScreen
+import com.peedrovzxf.vora.ui.download.DownloadViewModel
 import com.peedrovzxf.vora.ui.search.SearchScreen
 import com.peedrovzxf.vora.ui.settings.SettingsScreen
 import com.peedrovzxf.vora.ui.settings.SettingsViewModel
@@ -51,6 +53,7 @@ sealed class Screen(val route: String) {
         fun createRoute(albumId: Long) = "editalbum/$albumId"
     }
     object LikedSongs : Screen("liked")
+    object Download   : Screen("download")
 }
 
 @Composable
@@ -60,6 +63,7 @@ fun NavGraph(
     songs: List<Song>,
     albums: List<Album>,
     artists: List<Artist>,
+    downloadViewModel: DownloadViewModel,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -176,6 +180,10 @@ fun NavGraph(
                 playerController = playerController,
                 onBack           = { navController.popBackStack() }
             )
+        }
+
+        composable(Screen.Download.route) {
+            DownloadScreen(downloadViewModel = downloadViewModel)
         }
 
         composable(Screen.EditAlbum.route) { backStackEntry ->

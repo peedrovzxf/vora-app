@@ -75,4 +75,8 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     implementation("androidx.compose.ui:ui-text-google-fonts:1.7.8")
+
+    implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.26.0")
+
+    implementation("net.jthink:jaudiotagger:3.0.1")
 }

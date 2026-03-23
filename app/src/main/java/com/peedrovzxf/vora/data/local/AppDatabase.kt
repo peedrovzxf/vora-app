@@ -16,8 +16,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         AlbumSongOrderEntity::class,
         PlayHistoryEntity::class,
         LikedSongEntity::class,
+        AppSettingsEntity::class,
     ],
-    version = 5
+    version = 6
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun playlistDao(): PlaylistDao
@@ -25,9 +26,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun albumMetadataDao(): AlbumMetadataDao
     abstract fun playHistoryDao(): PlayHistoryDao
     abstract fun likedSongDao(): LikedSongDao
+    abstract fun appSettingsDao(): AppSettingsDao
 
     companion object {
-
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -35,7 +36,16 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
                     "CREATE TABLE IF NOT EXISTS `liked_songs` " +
-                    "(`songId` INTEGER NOT NULL, PRIMARY KEY(`songId`))"
+                            "(`songId` INTEGER NOT NULL, PRIMARY KEY(`songId`))"
+                )
+            }
+        }
+
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `app_settings` " +
+                            "(`key` TEXT NOT NULL, `value` TEXT NOT NULL, PRIMARY KEY(`key`))"
                 )
             }
         }
@@ -47,7 +57,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "vora_db"
                 )
-                    .addMigrations(MIGRATION_4_5)
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
                     .fallbackToDestructiveMigration(true)
                     .build()
                     .also { INSTANCE = it }

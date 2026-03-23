@@ -14,11 +14,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
@@ -32,13 +33,16 @@ import com.peedrovzxf.vora.data.model.Artist
 import com.peedrovzxf.vora.data.model.Song
 import com.peedrovzxf.vora.data.repository.PlayHistoryRepository
 import com.peedrovzxf.vora.data.repository.SongMetadataRepository
+import com.peedrovzxf.vora.data.youtube.NewPipeDownloader
 import com.peedrovzxf.vora.player.PlayerController
+import com.peedrovzxf.vora.ui.download.DownloadViewModel
 import com.peedrovzxf.vora.ui.navigation.NavGraph
 import com.peedrovzxf.vora.ui.navigation.Screen
 import com.peedrovzxf.vora.ui.player.MiniPlayerBar
 import com.peedrovzxf.vora.ui.player.NowPlayingScreen
 import com.peedrovzxf.vora.ui.settings.SettingsViewModel
 import com.peedrovzxf.vora.ui.theme.VoraTheme
+import org.schabi.newpipe.extractor.NewPipe
 
 class MainActivity : ComponentActivity() {
 
@@ -46,6 +50,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        NewPipe.init(NewPipeDownloader)
         enableEdgeToEdge()
         val historyRepository = PlayHistoryRepository(
             AppDatabase.getInstance(this).playHistoryDao()
@@ -91,8 +96,10 @@ fun VoraApp(playerController: PlayerController) {
         val launcher = rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { granted -> hasPermission = granted }
+        val downloadViewModel: DownloadViewModel = viewModel()
+        val refreshTrigger by downloadViewModel.refreshLibrary.collectAsState()
 
-        LaunchedEffect(hasPermission) {
+        LaunchedEffect(hasPermission, refreshTrigger) {
             if (hasPermission) {
                 val source             = MediaStoreSource(context)
                 val rawSongs           = source.getSongs()
@@ -124,6 +131,7 @@ fun VoraApp(playerController: PlayerController) {
             Screen.Home.route,
             Screen.Search.route,
             Screen.Library.route,
+            Screen.Download.route,
             Screen.Settings.route
         )
 
@@ -205,6 +213,23 @@ fun VoraApp(playerController: PlayerController) {
                                     colors = navItemColors()
                                 )
                                 NavigationBarItem(
+                                    selected = currentRoute == Screen.Download.route,
+                                    onClick  = {
+                                        navController.navigate(Screen.Download.route) {
+                                            popUpTo(Screen.Home.route)
+                                        }
+                                    },
+                                    icon  = {
+                                        Icon(
+                                            imageVector = if (currentRoute == Screen.Download.route)
+                                                Icons.Filled.CloudDownload else Icons.Outlined.CloudDownload,
+                                            contentDescription = "Downloads"
+                                        )
+                                    },
+                                    label  = { Text("Downloads") },
+                                    colors = navItemColors()
+                                )
+                                NavigationBarItem(
                                     selected = currentRoute == Screen.Settings.route,
                                     onClick  = {
                                         navController.navigate(Screen.Settings.route) {
@@ -236,7 +261,8 @@ fun VoraApp(playerController: PlayerController) {
                         playerController = playerController,
                         songs            = mergedSongs,
                         albums           = albums,
-                        artists          = artists
+                        artists          = artists,
+                        downloadViewModel = downloadViewModel
                     )
                 }
             }
