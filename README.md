@@ -9,12 +9,12 @@ A clean, minimal music player for Android. Play your local library, download son
 ## Screenshots
 
 <p align="center">
-  <img src="screenshots/Screenshot_20260323_031710.jpg" width="180"/>
-  <img src="screenshots/Screenshot_20260323_031715.jpg" width="180"/>
-  <img src="screenshots/Screenshot_20260323_031720.jpg" width="180"/>
-  <img src="screenshots/Screenshot_20260323_031724.jpg" width="180"/>
-  <img src="screenshots/Screenshot_20260323_031728.jpg" width="180"/>
-  <img src="screenshots/Screenshot_20260323_031730.jpg" width="180"/>
+  <img src="assets/Screenshot_20260323_031710.jpg" width="180"/>
+  <img src="assets/Screenshot_20260323_031715.jpg" width="180"/>
+  <img src="assets/Screenshot_20260323_031720.jpg" width="180"/>
+  <img src="assets/Screenshot_20260323_031724.jpg" width="180"/>
+  <img src="assets/Screenshot_20260323_031728.jpg" width="180"/>
+  <img src="assets/Screenshot_20260323_031730.jpg" width="180"/>
 </p>
 
 ---
