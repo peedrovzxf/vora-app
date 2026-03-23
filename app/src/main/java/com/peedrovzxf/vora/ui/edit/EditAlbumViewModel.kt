@@ -8,6 +8,7 @@ import com.peedrovzxf.vora.data.local.ImageStorage
 import com.peedrovzxf.vora.data.model.Album
 import com.peedrovzxf.vora.data.model.Song
 import com.peedrovzxf.vora.data.repository.AlbumMetadataRepository
+import com.peedrovzxf.vora.data.repository.SongMetadataRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -42,6 +43,21 @@ class EditAlbumViewModel(application: Application) : AndroidViewModel(applicatio
     fun saveSongOrder(albumName: String, songs: List<Song>) {
         viewModelScope.launch {
             repository.saveSongOrder(albumName, songs)
+        }
+    }
+
+    private val songMetadataRepository = SongMetadataRepository(
+        AppDatabase.getInstance(application).songMetadataDao()
+    )
+
+    fun saveAlbumOverrides(albumName: String, newName: String, artist: String, songs: List<Song>) {
+        viewModelScope.launch {
+            repository.saveAlbumName(albumName, newName)
+            songMetadataRepository.saveAlbumOverrides(
+                songs      = songs,
+                artist     = artist,
+                albumName  = newName.ifBlank { albumName }
+            )
         }
     }
 }

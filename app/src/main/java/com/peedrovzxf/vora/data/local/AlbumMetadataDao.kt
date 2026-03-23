@@ -23,4 +23,7 @@ interface AlbumMetadataDao {
 
     @Query("DELETE FROM album_song_order WHERE albumName = :albumName")
     suspend fun clearSongOrder(albumName: String)
+
+    @Query("SELECT * FROM album_metadata WHERE albumName = :albumName LIMIT 1")
+    suspend fun getAlbumMetadataOnce(albumName: String): AlbumMetadataEntity?
 }

@@ -27,6 +27,7 @@ class AlbumMetadataRepository(private val dao: AlbumMetadataDao) {
             }
             album.copy(
                 albumArtUri = metadata?.customAlbumArtPath ?: album.albumArtUri,
+                name        = metadata?.customAlbumName ?: album.name,
                 songs = sortedSongs
             )
         }
@@ -40,7 +41,8 @@ class AlbumMetadataRepository(private val dao: AlbumMetadataDao) {
             originalAlbums.map { album ->
                 val metadata = allMetadata.find { it.albumName == album.name }
                 album.copy(
-                    albumArtUri = metadata?.customAlbumArtPath ?: album.albumArtUri
+                    albumArtUri = metadata?.customAlbumArtPath ?: album.albumArtUri,
+                    name        = metadata?.customAlbumName ?: album.name
                 )
             }
         }
@@ -66,5 +68,16 @@ class AlbumMetadataRepository(private val dao: AlbumMetadataDao) {
                 )
             )
         }
+    }
+
+    suspend fun saveAlbumName(albumName: String, newName: String) {
+        val existing = dao.getAlbumMetadataOnce(albumName)
+        dao.upsertAlbumMetadata(
+            AlbumMetadataEntity(
+                albumName          = albumName,
+                customAlbumArtPath = existing?.customAlbumArtPath,
+                customAlbumName    = newName.ifBlank { null }
+            )
+        )
     }
 }

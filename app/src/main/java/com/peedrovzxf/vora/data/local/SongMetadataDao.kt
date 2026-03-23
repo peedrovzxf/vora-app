@@ -17,4 +17,7 @@ interface SongMetadataDao {
 
     @Query("DELETE FROM song_metadata WHERE songId = :songId")
     suspend fun deleteMetadata(songId: Long)
+
+    @Query("SELECT * FROM song_metadata WHERE songId = :songId LIMIT 1")
+    suspend fun getMetadataOnce(songId: Long): SongMetadataEntity?
 }

@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 data class AlbumMetadataEntity(
     @PrimaryKey
     val albumName: String,
-    val customAlbumArtPath: String? = null
+    val customAlbumArtPath: String? = null,
+    val customAlbumName: String? = null
 )

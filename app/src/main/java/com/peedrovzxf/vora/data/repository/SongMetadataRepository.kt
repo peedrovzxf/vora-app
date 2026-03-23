@@ -62,4 +62,34 @@ class SongMetadataRepository(private val dao: SongMetadataDao) {
     suspend fun clearMetadata(songId: Long) {
         dao.deleteMetadata(songId)
     }
+
+    suspend fun saveAlbumArtistOverride(songs: List<Song>, artist: String) {
+        songs.forEach { song ->
+            val existing = dao.getMetadataOnce(song.id)
+            dao.upsertMetadata(
+                SongMetadataEntity(
+                    songId           = song.id,
+                    customTitle      = existing?.customTitle,
+                    customArtist     = artist.ifBlank { null },
+                    customAlbum      = existing?.customAlbum,
+                    customAlbumArtPath = existing?.customAlbumArtPath
+                )
+            )
+        }
+    }
+
+    suspend fun saveAlbumOverrides(songs: List<Song>, artist: String, albumName: String) {
+        songs.forEach { song ->
+            val existing = dao.getMetadataOnce(song.id)
+            dao.upsertMetadata(
+                SongMetadataEntity(
+                    songId             = song.id,
+                    customTitle        = existing?.customTitle,
+                    customArtist       = artist.ifBlank { null },
+                    customAlbum        = albumName.ifBlank { null },
+                    customAlbumArtPath = existing?.customAlbumArtPath
+                )
+            )
+        }
+    }
 }

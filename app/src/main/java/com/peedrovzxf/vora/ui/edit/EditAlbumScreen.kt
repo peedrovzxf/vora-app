@@ -40,14 +40,16 @@ fun EditAlbumScreen(
 ) {
     val context      = LocalContext.current
     var albumArtPath by remember(album.albumArtUri) { mutableStateOf(album.albumArtUri) }
+    var artistInput by remember(album.artist) { mutableStateOf(album.artist) }
+    var albumNameInput by remember(album.name) { mutableStateOf(album.name) }
     val songsState   = remember(album.songs) {
         mutableStateListOf<Song>().also { it.addAll(album.songs) }
     }
 
     val lazyListState = rememberLazyListState()
     val reorderState  = rememberReorderableLazyListState(lazyListState) { from, to ->
-        val fromIndex = from.index - 1
-        val toIndex   = to.index - 1
+        val fromIndex = from.index - 4
+        val toIndex   = to.index - 4
         if (fromIndex >= 0 && toIndex >= 0 &&
             fromIndex < songsState.size && toIndex < songsState.size
         ) {
@@ -93,6 +95,7 @@ fun EditAlbumScreen(
                 actions = {
                     TextButton(
                         onClick = {
+                            viewModel.saveAlbumOverrides(album.name, albumNameInput, artistInput, songsState)
                             viewModel.saveSongOrder(album.name, songsState)
                             onBack()
                         }
@@ -168,6 +171,30 @@ fun EditAlbumScreen(
                         }
                     }
                 }
+            }
+
+            item {
+                OutlinedTextField(
+                    value         = albumNameInput,
+                    onValueChange = { albumNameInput = it },
+                    label         = { Text("Album title") },
+                    singleLine    = true,
+                    modifier      = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                )
+            }
+
+            item {
+                OutlinedTextField(
+                    value = artistInput,
+                    onValueChange = { artistInput = it },
+                    label = { Text("Artist") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                )
             }
 
             item {
